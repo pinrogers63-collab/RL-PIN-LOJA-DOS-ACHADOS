@@ -1,58 +1,85 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { createProduct, listProducts, updateProductStatus } from "@/lib/product-repository";
 
 type Status = "NOVO" | "EM_ALTA" | "OBSERVAR" | "APROVADO" | "SALAO" | "PUBLICADO" | "DESCARTADO";
-type Platform = "Shopee" | "Mercado Livre" | "TikTok Shop" | "Pinterest";
+type PlatformId = "shopee" | "mercado_livre" | "tiktok" | "pinterest";
 
-type Product = {
+type CloudProduct = {
   id: string;
   title: string;
-  platform: Platform;
+  platform: PlatformId;
   cost: number;
-  marketPrice: number;
+  market_price: number;
   stock: number;
   score: number;
   status: Status;
+  updated_at?: string;
 };
 
-const demo: Product[] = [
-  { id: "demo-1", title: "Kit premium de utensílios de cozinha", platform: "Shopee", cost: 39.9, marketPrice: 89.9, stock: 120, score: 92, status: "SALAO" },
-  { id: "demo-2", title: "Luminária decorativa touch", platform: "Mercado Livre", cost: 34.9, marketPrice: 79.9, stock: 88, score: 88, status: "APROVADO" },
-  { id: "demo-3", title: "Organizador modular para cozinha", platform: "TikTok Shop", cost: 24.9, marketPrice: 59.9, stock: 64, score: 84, status: "OBSERVAR" }
-];
+const platformLabel: Record<PlatformId,string> = {
+  shopee: "Shopee",
+  mercado_livre: "Mercado Livre",
+  tiktok: "TikTok Shop",
+  pinterest: "Pinterest"
+};
 
 function brl(v: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v || 0);
 }
 
-function margin(p: Product) {
-  if (!p.marketPrice) return 0;
-  return Math.round(((p.marketPrice - p.cost) / p.marketPrice) * 100);
+function margin(p: CloudProduct) {
+  if (!p.market_price) return 0;
+  return Math.round(((p.market_price - p.cost) / p.market_price) * 100);
 }
 
 export default function Dashboard() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [ready, setReady] = useState(false);
+  const [products, setProducts] = useState<CloudProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [cloudReady, setCloudReady] = useState(false);
+  const [message, setMessage] = useState("");
   const [form, setForm] = useState({
     title: "",
-    platform: "Shopee" as Platform,
+    platform: "shopee" as PlatformId,
     cost: "",
     marketPrice: "",
     stock: ""
   });
 
+  async function refresh() {
+    try {
+      const rows = await listProducts();
+      setProducts(rows as CloudProduct[]);
+      setCloudReady(true);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Falha ao carregar a esteira em nuvem.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    const raw = window.localStorage.getItem("rlpin-products-v1");
-    setProducts(raw ? JSON.parse(raw) : demo);
-    setReady(true);
+    (async () => {
+      try {
+        const supabase = getSupabaseBrowser();
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) {
+          window.location.href = "/login";
+          return;
+        }
+        await refresh();
+      } catch (err) {
+        setMessage(err instanceof Error ? err.message : "Falha ao iniciar a RL PIN.");
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  useEffect(() => {
-    if (ready) window.localStorage.setItem("rlpin-products-v1", JSON.stringify(products));
-  }, [products, ready]);
-
   const active = useMemo(() => products.filter((p) => p.status !== "DESCARTADO"), [products]);
+  const champion = useMemo(() => [...active].sort((a,b) => b.score-a.score)[0], [active]);
+
   const metrics = {
     total: active.length,
     valid: active.filter((p) => p.score >= 75).length,
@@ -61,49 +88,60 @@ export default function Dashboard() {
     discarded: products.filter((p) => p.status === "DESCARTADO").length
   };
 
-  function addProduct(e: React.FormEvent) {
+  async function addProduct(e: React.FormEvent) {
     e.preventDefault();
+    setMessage("");
+
     const cost = Number(form.cost.replace(",", "."));
     const marketPrice = Number(form.marketPrice.replace(",", "."));
     const stock = Number(form.stock || "0");
-    if (!form.title.trim() || !Number.isFinite(cost) || !Number.isFinite(marketPrice)) return;
 
-    const duplicate = products.some((p) =>
-      p.title.trim().toLowerCase() === form.title.trim().toLowerCase() &&
-      p.platform === form.platform
-    );
-
-    if (duplicate) {
-      alert("Produto já existe nesta plataforma. Atualize o existente para evitar duplicação.");
+    if (!form.title.trim() || !Number.isFinite(cost) || !Number.isFinite(marketPrice)) {
+      setMessage("Preencha nome, custo e preço de mercado corretamente.");
       return;
     }
 
     const rawMargin = marketPrice > 0 ? ((marketPrice - cost) / marketPrice) * 100 : 0;
     const score = Math.max(0, Math.min(100, Math.round(rawMargin * 2 + (stock > 0 ? 20 : 0))));
+    const status: Status = score >= 80 ? "EM_ALTA" : score >= 65 ? "OBSERVAR" : "NOVO";
 
-    setProducts((prev) => [
-      {
-        id: crypto.randomUUID(),
+    try {
+      await createProduct({
         title: form.title.trim(),
         platform: form.platform,
         cost,
         marketPrice,
         stock,
         score,
-        status: score >= 80 ? "EM_ALTA" : score >= 65 ? "OBSERVAR" : "NOVO"
-      },
-      ...prev
-    ]);
-
-    setForm({ title: "", platform: "Shopee", cost: "", marketPrice: "", stock: "" });
+        status
+      });
+      setForm({ title: "", platform: "shopee", cost: "", marketPrice: "", stock: "" });
+      await refresh();
+      setMessage("Produto salvo no banco real da RL PIN.");
+    } catch (err) {
+      const text = err instanceof Error ? err.message : "Falha ao salvar produto.";
+      setMessage(text.includes("duplicate") ? "Este produto já existe na esteira." : text);
+    }
   }
 
-  function setStatus(id: string, status: Status) {
-    setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, status } : p)));
+  async function changeStatus(id: string, status: Status) {
+    setMessage("");
+    try {
+      await updateProductStatus(id, status);
+      await refresh();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Falha ao atualizar status.");
+    }
   }
 
-  function resetDemo() {
-    if (confirm("Restaurar os produtos de demonstração?")) setProducts(demo);
+  async function signOut() {
+    const supabase = getSupabaseBrowser();
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
+
+  if (loading) {
+    return <main className="shell"><section className="card panel"><p>Carregando RL PIN V5 Premium...</p></section></main>;
   }
 
   return (
@@ -114,14 +152,19 @@ export default function Dashboard() {
           <h1>Loja dos Achados <span>V5 Premium</span></h1>
           <p className="sub">Garimpo → Guardião → Margem → Salão → Vitória → Publicação</p>
         </div>
-        <div className="sync">
-          <span className="dot" />
-          <div>
-            <strong>Base funcional ativa</strong>
-            <small>Coletas planejadas: 06:00 • 10:00 • 15:00</small>
+        <div className="topActions">
+          <div className="sync">
+            <span className={cloudReady ? "dot online" : "dot"} />
+            <div>
+              <strong>{cloudReady ? "Banco em nuvem conectado" : "Banco não conectado"}</strong>
+              <small>Coletas planejadas: 06:00 • 10:00 • 15:00</small>
+            </div>
           </div>
+          <button className="secondary" onClick={signOut}>Sair</button>
         </div>
       </header>
+
+      {message && <div className="notice">{message}</div>}
 
       <section className="metrics">
         <article className="card metric"><small>Na esteira</small><strong>{metrics.total}</strong><span>produtos ativos</span></article>
@@ -133,21 +176,24 @@ export default function Dashboard() {
       <section className="card panel">
         <div className="panelTitle">
           <div>
-            <p className="eyebrow">IMPORTADOR OPERACIONAL</p>
-            <h2>Adicionar produto à esteira</h2>
+            <p className="eyebrow">IMPORTADOR CLOUD</p>
+            <h2>Adicionar produto à esteira real</h2>
           </div>
-          <button className="secondary" onClick={resetDemo}>Restaurar demonstração</button>
+          <span className="badge">Supabase ativo</span>
         </div>
 
         <form className="productForm" onSubmit={addProduct}>
           <input placeholder="Nome do produto" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          <select value={form.platform} onChange={(e) => setForm({ ...form, platform: e.target.value as Platform })}>
-            <option>Shopee</option><option>Mercado Livre</option><option>TikTok Shop</option><option>Pinterest</option>
+          <select value={form.platform} onChange={(e) => setForm({ ...form, platform: e.target.value as PlatformId })}>
+            <option value="shopee">Shopee</option>
+            <option value="mercado_livre">Mercado Livre</option>
+            <option value="tiktok">TikTok Shop</option>
+            <option value="pinterest">Pinterest</option>
           </select>
           <input placeholder="Custo R$" inputMode="decimal" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} />
           <input placeholder="Preço mercado R$" inputMode="decimal" value={form.marketPrice} onChange={(e) => setForm({ ...form, marketPrice: e.target.value })} />
           <input placeholder="Estoque" inputMode="numeric" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
-          <button className="primary" type="submit">+ Adicionar</button>
+          <button className="primary" type="submit">+ Salvar na nuvem</button>
         </form>
       </section>
 
@@ -159,14 +205,14 @@ export default function Dashboard() {
           </div>
           <div className="platforms">
             {[
-              ["Shopee", "06:00"],
-              ["Mercado Livre", "06:05"],
-              ["TikTok Shop", "06:12"],
-              ["Pinterest", "Distribuição"]
-            ].map(([name, next]) => (
-              <div className="platform" key={name}>
-                <div><strong>{name}</strong><small>Próxima: {next}</small></div>
-                <div className="platformRight"><b>{active.filter((p) => p.platform === name).length}</b><span>não conectado</span></div>
+              ["shopee", "06:00"],
+              ["mercado_livre", "06:05"],
+              ["tiktok", "06:12"],
+              ["pinterest", "Distribuição"]
+            ].map(([id, next]) => (
+              <div className="platform" key={id}>
+                <div><strong>{platformLabel[id as PlatformId]}</strong><small>Próxima: {next}</small></div>
+                <div className="platformRight"><b>{active.filter((p) => p.platform === id).length}</b><span>não conectado</span></div>
               </div>
             ))}
           </div>
@@ -174,19 +220,19 @@ export default function Dashboard() {
 
         <article className="card panel hero">
           <p className="eyebrow">PRODUTO CAMPEÃO DO DIA</p>
-          <h2>{active.sort((a,b) => b.score-a.score)[0]?.title ?? "Aguardando produtos"}</h2>
-          <p>Seleção provisória pelo maior score da esteira. O ranking avançado entrará com tendência, concorrência, fornecedor e políticas.</p>
+          <h2>{champion?.title ?? "Aguardando produtos"}</h2>
+          <p>Ranking provisório pelo maior score. O motor avançado já está preparado para incluir tendência, concorrência, fornecedor e risco de política.</p>
           <div className="heroScore">
-            <div><span>Score</span><strong>{active.sort((a,b) => b.score-a.score)[0]?.score ?? 0}</strong></div>
-            <div><span>Margem bruta</span><strong>{active[0] ? margin(active.sort((a,b) => b.score-a.score)[0]) : 0}%</strong></div>
-            <div><span>Estoque</span><strong>{active.sort((a,b) => b.score-a.score)[0]?.stock ?? 0}</strong></div>
+            <div><span>Score</span><strong>{champion?.score ?? 0}</strong></div>
+            <div><span>Margem bruta</span><strong>{champion ? margin(champion) : 0}%</strong></div>
+            <div><span>Estoque</span><strong>{champion?.stock ?? 0}</strong></div>
           </div>
         </article>
       </section>
 
       <section className="card panel">
         <div className="panelTitle">
-          <div><p className="eyebrow">ESTEIRA</p><h2>Produtos em operação</h2></div>
+          <div><p className="eyebrow">ESTEIRA CLOUD</p><h2>Produtos em operação</h2></div>
           <span className="badge">{metrics.publish} aprovados/publicados</span>
         </div>
         <div className="tableWrap">
@@ -195,27 +241,33 @@ export default function Dashboard() {
             <tbody>
               {active.map((p) => (
                 <tr key={p.id}>
-                  <td>{p.title}</td><td>{p.platform}</td><td>{brl(p.cost)}</td><td>{brl(p.marketPrice)}</td><td>{margin(p)}%</td><td>{p.score}</td>
+                  <td>{p.title}</td>
+                  <td>{platformLabel[p.platform]}</td>
+                  <td>{brl(p.cost)}</td>
+                  <td>{brl(p.market_price)}</td>
+                  <td>{margin(p)}%</td>
+                  <td>{p.score}</td>
                   <td><span className="status">{p.status}</span></td>
                   <td className="actions">
-                    <button onClick={() => setStatus(p.id, "APROVADO")}>Aprovar</button>
-                    <button onClick={() => setStatus(p.id, "SALAO")}>Salão</button>
-                    <button onClick={() => setStatus(p.id, "DESCARTADO")}>Descartar</button>
+                    <button onClick={() => changeStatus(p.id, "APROVADO")}>Aprovar</button>
+                    <button onClick={() => changeStatus(p.id, "SALAO")}>Salão</button>
+                    <button onClick={() => changeStatus(p.id, "DESCARTADO")}>Descartar</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          {!active.length && <p className="empty">Nenhum produto ainda. A esteira real está pronta para receber os primeiros itens.</p>}
         </div>
       </section>
 
       <section className="grid3">
         <article className="card mini"><p className="eyebrow">GUARDIÃO RL</p><h3>Conformidade antes do Salão</h3><p>Marca, restrições, estoque, prazo, política e fornecedor.</p><span className="badge">motor inicial pronto</span></article>
         <article className="card mini"><p className="eyebrow">CALCULADORA</p><h3>Preço e lucro automático</h3><p>Taxas, custo, frete, reserva, lucro e preço recomendado.</p><span className="badge">API pronta</span></article>
-        <article className="card mini"><p className="eyebrow">SALÃO DA VITÓRIA</p><h3>4 conceitos cinematográficos</h3><p>Imagem premium, copy por canal e vídeo curto da Vitória.</p><span className="badge">próxima fase</span></article>
+        <article className="card mini"><p className="eyebrow">SALÃO DA VITÓRIA</p><h3>4 conceitos cinematográficos</h3><p>Imagem premium, copy por canal e vídeo curto da Vitória.</p><span className="badge">estrutura pronta</span></article>
       </section>
 
-      <footer><span>RL PIN • Loja dos Achados</span><span>V5 Premium • construção ativa</span></footer>
+      <footer><span>RL PIN • Loja dos Achados</span><span>V5 Premium • cloud foundation</span></footer>
     </main>
   );
 }
