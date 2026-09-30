@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { createSupplier, listSuppliers } from "@/lib/supplier-repository";
 import { supplierScore } from "@/lib/suppliers";
+import { registerSupplierTest } from "@/lib/supplier-automation";
 
 type SupplierRow = {
   id: string;
@@ -37,6 +38,17 @@ export default function SuppliersPage() {
     if(!data.session){ window.location.href="/login"; return; }
     await refresh();
   })();},[]);
+
+  async function testSupplier(id:string, passed:boolean){
+    setMsg("");
+    try{
+      const updated:any = await registerSupplierTest(id, passed);
+      await refresh();
+      setMsg(passed
+        ? `Teste registrado. Status atual: ${updated.status}.`
+        : "Teste reprovado registrado. Fornecedor permanece em avaliação.");
+    }catch(e){setMsg(e instanceof Error ? e.message : "Falha ao registrar teste.");}
+  }
 
   async function add(e:React.FormEvent){
     e.preventDefault(); setMsg("");
@@ -85,12 +97,12 @@ export default function SuppliersPage() {
       <div className="panelTitle"><div><p className="eyebrow">HOMOLOGAÇÃO</p><h2>Fornecedores cadastrados</h2></div><span className="badge">{rows.length} fornecedores</span></div>
       <div className="tableWrap">
         <table>
-          <thead><tr><th>Fornecedor</th><th>Status</th><th>Despacho</th><th>NF</th><th>Rastreio</th><th>Sync</th><th>Testes</th><th>Score</th></tr></thead>
+          <thead><tr><th>Fornecedor</th><th>Status</th><th>Despacho</th><th>NF</th><th>Rastreio</th><th>Sync</th><th>Testes</th><th>Score</th><th>Ações</th></tr></thead>
           <tbody>{rows.map(s=>{
             const score=supplierScore({
               id:s.id,name:s.name,status:s.status,channels:s.channels,shipsDirectly:s.ships_directly,invoice:s.invoice,tracking:s.tracking,dispatchHours:s.dispatch_hours ?? undefined,stockSync:s.stock_sync,testedOrders:s.tested_orders,notes:s.notes ?? undefined
             });
-            return <tr key={s.id}><td>{s.name}</td><td><span className="status">{s.status}</span></td><td>{s.dispatch_hours ?? "-"}h</td><td>{s.invoice?"Sim":"Não"}</td><td>{s.tracking?"Sim":"Não"}</td><td>{s.stock_sync?"Sim":"Não"}</td><td>{s.tested_orders}</td><td>{score}</td></tr>
+            return <tr key={s.id}><td>{s.name}</td><td><span className="status">{s.status}</span></td><td>{s.dispatch_hours ?? "-"}h</td><td>{s.invoice?"Sim":"Não"}</td><td>{s.tracking?"Sim":"Não"}</td><td>{s.stock_sync?"Sim":"Não"}</td><td>{s.tested_orders}</td><td>{score}</td><td className="actions"><button onClick={()=>testSupplier(s.id,true)}>Teste OK</button><button onClick={()=>testSupplier(s.id,false)}>Reprovou</button></td></tr>
           })}</tbody>
         </table>
       </div>
