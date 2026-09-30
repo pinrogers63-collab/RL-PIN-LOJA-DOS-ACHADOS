@@ -1,3 +1,5 @@
+"use client";
+
 import { getSupabaseBrowser } from "./supabase-browser";
 import { enqueueForPublish } from "./publish-repository";
 import { runGuardian } from "./guardian";
