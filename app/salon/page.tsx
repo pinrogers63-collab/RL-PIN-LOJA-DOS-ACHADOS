@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { createSalonJob, listSalonEligibleProducts, listSalonJobs } from "@/lib/salon-repository";
 import { salonConcepts } from "@/lib/salon";
+import { buildSalonBrief } from "@/lib/salon-brief";
 
 type ProductRow={id:string;title:string;platform:string;score:number;category:string|null;status:string};
 type JobRow={id:string;status:string;selected_concept:string;victory_wardrobe:string;channels:string[];created_at:string;products?:{title?:string}};
@@ -12,6 +13,7 @@ export default function SalonPage(){
   const [products,setProducts]=useState<ProductRow[]>([]);
   const [jobs,setJobs]=useState<JobRow[]>([]);
   const [msg,setMsg]=useState("");
+  const [brief,setBrief]=useState<any|null>(null);
 
   async function refresh(){
     const [p,j]=await Promise.all([listSalonEligibleProducts(),listSalonJobs()]);
@@ -27,6 +29,14 @@ export default function SalonPage(){
       await refresh();
     }catch(e){setMsg(e instanceof Error?e.message:"Falha ao abrir o Salão.");}
   })();},[]);
+
+  function previewBrief(p:ProductRow){
+    setBrief(buildSalonBrief({
+      title:p.title,
+      category:p.category ?? undefined,
+      platform:p.platform
+    }));
+  }
 
   async function prepare(p:ProductRow){
     try{
@@ -51,10 +61,16 @@ export default function SalonPage(){
 
       <article className="card panel">
         <div className="panelTitle"><div><p className="eyebrow">FILA</p><h2>Produtos elegíveis</h2></div><span className="badge">{products.length} itens</span></div>
-        <div className="platforms">{products.map(p=><div className="platform" key={p.id}><div><strong>{p.title}</strong><small>{p.platform} • score {p.score} • {p.status}</small></div><button className="primary" onClick={()=>prepare(p)}>Preparar</button></div>)}
+        <div className="platforms">{products.map(p=><div className="platform" key={p.id}><div><strong>{p.title}</strong><small>{p.platform} • score {p.score} • {p.status}</small></div><div className="actions"><button onClick={()=>previewBrief(p)}>Ver briefing</button><button className="primary" onClick={()=>prepare(p)}>Preparar</button></div></div>)}
         {!products.length&&<p className="empty">Aprove um produto para enviá-lo ao Salão.</p>}</div>
       </article>
     </section>
+
+    {brief&&<section className="card panel">
+      <div className="panelTitle"><div><p className="eyebrow">BRIEFING INTERNO</p><h2>{brief.product}</h2></div><button className="secondary" onClick={()=>setBrief(null)}>Fechar</button></div>
+      <div className="conceptGrid">{brief.concepts.map((c:any)=><div className="conceptCard" key={c.id}><strong>{c.title}</strong><p>{c.prompt}</p></div>)}</div>
+      <div className="copyBox"><strong>{brief.copy.headline}</strong><p>{brief.copy.body}</p><small>{brief.copy.cta}</small></div>
+    </section>}
 
     <section className="card panel">
       <div className="panelTitle"><div><p className="eyebrow">JOBS DO SALÃO</p><h2>Produção preparada</h2></div><span className="badge">{jobs.length} jobs</span></div>
