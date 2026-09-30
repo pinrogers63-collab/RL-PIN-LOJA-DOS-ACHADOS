@@ -34,3 +34,30 @@ export async function createSupplier(input: Omit<Supplier, "id">) {
   if (error) throw error;
   return data;
 }
+
+
+export async function updateSupplierTest(id: string, testedOrders: number) {
+  const supabase = getSupabaseBrowser();
+  const { data, error } = await supabase
+    .from("suppliers")
+    .update({ tested_orders: testedOrders })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateSupplierStatus(id: string, status: "EM_TESTE" | "HOMOLOGADO" | "BLOQUEADO") {
+  const supabase = getSupabaseBrowser();
+  const { data, error } = await supabase
+    .from("suppliers")
+    .update({ status })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
