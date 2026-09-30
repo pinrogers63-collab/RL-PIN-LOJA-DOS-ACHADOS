@@ -78,3 +78,15 @@ footer{display:flex;justify-content:space-between;color:#657180;font-size:12px;p
 .supplierForm label{font-size:12px;color:var(--muted);display:flex;gap:6px;align-items:center;white-space:nowrap}
 @media(max-width:1100px){.supplierForm{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.supplierForm{grid-template-columns:1fr}}
+
+.modalBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);display:grid;place-items:center;padding:18px;z-index:50}
+.modal{width:min(920px,100%);max-height:82vh;overflow:auto;padding:20px}
+.historyGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.historyItem{border:1px solid var(--line);background:#0a0f14;border-radius:12px;padding:12px;display:grid;gap:5px}
+.historyItem strong{font-size:12px;color:var(--accent)}
+.historyItem span{font-size:12px;color:var(--muted)}
+.conceptGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.conceptCard{border:1px solid var(--line);background:#0a0f14;border-radius:13px;padding:14px}
+.conceptCard p{color:var(--muted);font-size:12px;line-height:1.45}
+.salonNote{margin-top:14px!important}
+@media(max-width:700px){.historyGrid,.conceptGrid{grid-template-columns:1fr}}
