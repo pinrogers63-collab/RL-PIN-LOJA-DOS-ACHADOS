@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { createProduct, listProducts, updateProductStatus } from "@/lib/product-repository";
+import { getProductHistory } from "@/lib/history-repository";
 
 type Status = "NOVO" | "EM_ALTA" | "OBSERVAR" | "APROVADO" | "SALAO" | "PUBLICADO" | "DESCARTADO";
 type PlatformId = "shopee" | "mercado_livre" | "tiktok" | "pinterest";
@@ -40,6 +41,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [cloudReady, setCloudReady] = useState(false);
   const [message, setMessage] = useState("");
+  const [historyTitle, setHistoryTitle] = useState("");
+  const [historyRows, setHistoryRows] = useState<any[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [form, setForm] = useState({
     title: "",
     platform: "shopee" as PlatformId,
@@ -134,6 +138,16 @@ export default function Dashboard() {
     }
   }
 
+  async function openHistory(p: CloudProduct) {
+    try {
+      setHistoryTitle(p.title);
+      setHistoryRows(await getProductHistory(p.id));
+      setHistoryOpen(true);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Falha ao carregar histórico.");
+    }
+  }
+
   async function signOut() {
     const supabase = getSupabaseBrowser();
     await supabase.auth.signOut();
@@ -160,6 +174,9 @@ export default function Dashboard() {
               <small>Coletas planejadas: 06:00 • 10:00 • 15:00</small>
             </div>
           </div>
+          <a className="secondary linkBtn" href="/suppliers">Fornecedores</a>
+          <a className="secondary linkBtn" href="/salon">Salão</a>
+          <a className="secondary linkBtn" href="/audit">Auditoria</a>
           <button className="secondary" onClick={signOut}>Sair</button>
         </div>
       </header>
@@ -251,6 +268,7 @@ export default function Dashboard() {
                   <td className="actions">
                     <button onClick={() => changeStatus(p.id, "APROVADO")}>Aprovar</button>
                     <button onClick={() => changeStatus(p.id, "SALAO")}>Salão</button>
+                    <button onClick={() => openHistory(p)}>Histórico</button>
                     <button onClick={() => changeStatus(p.id, "DESCARTADO")}>Descartar</button>
                   </td>
                 </tr>
@@ -266,6 +284,30 @@ export default function Dashboard() {
         <article className="card mini"><p className="eyebrow">CALCULADORA</p><h3>Preço e lucro automático</h3><p>Taxas, custo, frete, reserva, lucro e preço recomendado.</p><span className="badge">API pronta</span></article>
         <article className="card mini"><p className="eyebrow">SALÃO DA VITÓRIA</p><h3>4 conceitos cinematográficos</h3><p>Imagem premium, copy por canal e vídeo curto da Vitória.</p><span className="badge">estrutura pronta</span></article>
       </section>
+
+      {historyOpen && (
+        <div className="modalBackdrop" onClick={() => setHistoryOpen(false)}>
+          <section className="card modal" onClick={(e) => e.stopPropagation()}>
+            <div className="panelTitle">
+              <div><p className="eyebrow">HISTÓRICO DO PRODUTO</p><h2>{historyTitle}</h2></div>
+              <button className="secondary" onClick={() => setHistoryOpen(false)}>Fechar</button>
+            </div>
+            <div className="historyGrid">
+              {historyRows.map((h) => (
+                <div className="historyItem" key={h.id}>
+                  <strong>{new Date(h.captured_at).toLocaleString("pt-BR")}</strong>
+                  <span>Preço: {brl(Number(h.market_price ?? 0))}</span>
+                  <span>Custo: {brl(Number(h.cost ?? 0))}</span>
+                  <span>Estoque: {h.stock ?? 0}</span>
+                  <span>Score: {h.score ?? 0}</span>
+                  <span>Status: {h.status ?? "-"}</span>
+                </div>
+              ))}
+              {!historyRows.length && <p className="empty">Ainda não há alterações registradas.</p>}
+            </div>
+          </section>
+        </div>
+      )}
 
       <footer><span>RL PIN • Loja dos Achados</span><span>V5 Premium • cloud foundation</span></footer>
     </main>
