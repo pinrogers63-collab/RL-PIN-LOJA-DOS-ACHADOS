@@ -109,3 +109,8 @@ footer{display:flex;justify-content:space-between;color:#657180;font-size:12px;p
 .snapshotItem span{color:var(--muted);font-size:12px}
 @media(max-width:800px){.settingsGrid{grid-template-columns:1fr 1fr}.snapshotItem{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.settingsGrid{grid-template-columns:1fr}.checkLabel{grid-column:auto}.snapshotItem{grid-template-columns:1fr}}
+
+.copyBox{margin-top:14px;border:1px solid var(--line);background:#0a0f14;border-radius:13px;padding:14px}
+.copyBox strong{display:block;color:var(--accent);margin-bottom:7px}
+.copyBox p{color:var(--muted);line-height:1.5;margin:0 0 7px}
+.copyBox small{color:#9ca3af}
