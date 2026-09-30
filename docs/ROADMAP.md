@@ -7,9 +7,9 @@
 - [x] Motor inicial de margem
 - [x] Registro de conectores
 - [x] Guardião RL inicial
-- [ ] Banco persistente
-- [ ] Autenticação
-- [ ] CRUD real da esteira
+- [x] Banco persistente
+- [x] Autenticação
+- [x] Repositório cloud da esteira
 
 ## Fase 2 — Garimpo e atualização
 - [ ] Shopee
