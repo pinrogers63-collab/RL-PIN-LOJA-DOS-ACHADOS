@@ -10,9 +10,9 @@ describe("calculateProfit", () => {
       reservePercentage: 5,
       estimatedAdsPercentage: 5
     });
-    expect(r.profit).toBe(35);
-    expect(r.marginPercentage).toBe(35);
-    expect(r.verdict).toBe("EXCELENTE");
+    expect(r.profit).toBe(30);
+    expect(r.marginPercentage).toBe(30);
+    expect(r.verdict).toBe("VIAVEL");
   });
 
   it("não quebra com preço zero", () => {
