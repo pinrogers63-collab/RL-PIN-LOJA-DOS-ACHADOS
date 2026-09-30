@@ -148,6 +148,24 @@ export default function Dashboard() {
     }
   }
 
+  async function preparePublish(id: string) {
+    setMessage("");
+    try {
+      const response = await fetch("/api/publish/prepare", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ productId: id })
+      });
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error ?? "Falha na validação.");
+      setMessage(data.guard.approved
+        ? "Produto aprovado pelo Guardião e enviado para a fila segura de publicação."
+        : `Publicação bloqueada pelo Guardião: ${data.guard.blockers.join(", ")}`);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Falha ao preparar publicação.");
+    }
+  }
+
   async function signOut() {
     const supabase = getSupabaseBrowser();
     await supabase.auth.signOut();
@@ -178,6 +196,7 @@ export default function Dashboard() {
           <a className="secondary linkBtn" href="/salon">Salão</a>
           <a className="secondary linkBtn" href="/audit">Auditoria</a>
           <a className="secondary linkBtn" href="/operations">Operações</a>
+          <a className="secondary linkBtn" href="/fees">Taxas</a>
           <button className="secondary" onClick={signOut}>Sair</button>
         </div>
       </header>
@@ -270,6 +289,7 @@ export default function Dashboard() {
                     <button onClick={() => changeStatus(p.id, "APROVADO")}>Aprovar</button>
                     <button onClick={() => changeStatus(p.id, "SALAO")}>Salão</button>
                     <button onClick={() => openHistory(p)}>Histórico</button>
+                    <button onClick={() => preparePublish(p.id)}>Preparar publicação</button>
                     <button onClick={() => changeStatus(p.id, "DESCARTADO")}>Descartar</button>
                   </td>
                 </tr>
