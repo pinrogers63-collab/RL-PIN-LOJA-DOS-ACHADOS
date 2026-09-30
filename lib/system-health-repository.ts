@@ -26,11 +26,11 @@ export async function getSystemHealth() {
     database: "ONLINE",
     products: products.count ?? 0,
     suppliers: suppliers.count ?? 0,
-    publishReady: queue.data?.filter(q=>q.status==="PRONTO").length ?? 0,
-    publishBlocked: queue.data?.filter(q=>q.status==="BLOQUEADO").length ?? 0,
-    salonPending: salon.data?.filter(j=>j.status==="PLANEJADO" || j.status==="GERANDO").length ?? 0,
+    publishReady: queue.data?.filter((q:any)=>q.status==="PRONTO").length ?? 0,
+    publishBlocked: queue.data?.filter((q:any)=>q.status==="BLOQUEADO").length ?? 0,
+    salonPending: salon.data?.filter((j:any)=>j.status==="PLANEJADO" || j.status==="GERANDO").length ?? 0,
     connectors: connectors.data ?? [],
-    recentFailedRuns: runs.data?.filter(r=>r.status==="FAILED").length ?? 0,
+    recentFailedRuns: runs.data?.filter((r:any)=>r.status==="FAILED").length ?? 0,
     recentRuns: runs.data ?? []
   };
 }
