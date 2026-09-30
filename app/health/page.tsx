@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { getSystemHealth } from "@/lib/system-health-repository";
 import { buildDailySnapshot, listDailySnapshots } from "@/lib/daily-report-repository";
+import { downloadCsv } from "@/lib/csv";
 
 export default function HealthPage(){
   const [health,setHealth]=useState<any|null>(null);
@@ -32,6 +33,11 @@ export default function HealthPage(){
     }catch(e){setMsg(e instanceof Error?e.message:"Falha ao gerar snapshot.");}
   }
 
+  function exportSnapshots(){
+    downloadCsv("rl-pin-snapshots.csv", snapshots);
+    setMsg("CSV de snapshots exportado.");
+  }
+
   if(!health) return <main className="shell"><section className="card panel"><p>Carregando saúde do sistema...</p></section></main>;
 
   return <main className="shell">
@@ -55,7 +61,7 @@ export default function HealthPage(){
       </article>
 
       <article className="card panel">
-        <div className="panelTitle"><div><p className="eyebrow">RELATÓRIO DIÁRIO</p><h2>Snapshot operacional</h2></div><button className="primary" onClick={snapshot}>Gerar agora</button></div>
+        <div className="panelTitle"><div><p className="eyebrow">RELATÓRIO DIÁRIO</p><h2>Snapshot operacional</h2></div><div className="actions"><button className="secondary" onClick={exportSnapshots}>Exportar CSV</button><button className="primary" onClick={snapshot}>Gerar agora</button></div></div>
         <p className="sub">Últimos registros consolidados da operação.</p>
         <div className="snapshotList">{snapshots.map((s:any)=><div className="snapshotItem" key={s.id}><strong>{new Date(s.snapshot_date+"T12:00:00").toLocaleDateString("pt-BR")}</strong><span>Ativos {s.total_products}</span><span>Válidos {s.valid_products}</span><span>Salão {s.salon_products}</span><span>Publicados {s.published_products}</span></div>)}</div>
       </article>
