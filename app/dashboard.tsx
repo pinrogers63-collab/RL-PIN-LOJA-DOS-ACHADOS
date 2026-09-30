@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { createProduct, listProducts, updateProductStatus } from "@/lib/product-repository";
 import { getProductHistory } from "@/lib/history-repository";
+import { validateAndEnqueue } from "@/lib/publish-service";
 
 type Status = "NOVO" | "EM_ALTA" | "OBSERVAR" | "APROVADO" | "SALAO" | "PUBLICADO" | "DESCARTADO";
 type PlatformId = "shopee" | "mercado_livre" | "tiktok" | "pinterest";
@@ -151,13 +152,7 @@ export default function Dashboard() {
   async function preparePublish(id: string) {
     setMessage("");
     try {
-      const response = await fetch("/api/publish/prepare", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ productId: id })
-      });
-      const data = await response.json();
-      if (!response.ok || !data.ok) throw new Error(data.error ?? "Falha na validação.");
+      const data = await validateAndEnqueue(id);
       setMessage(data.guard.approved
         ? "Produto aprovado pelo Guardião e enviado para a fila segura de publicação."
         : `Publicação bloqueada pelo Guardião: ${data.guard.blockers.join(", ")}`);
