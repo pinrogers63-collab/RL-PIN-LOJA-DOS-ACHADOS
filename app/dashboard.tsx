@@ -177,6 +177,7 @@ export default function Dashboard() {
           <a className="secondary linkBtn" href="/suppliers">Fornecedores</a>
           <a className="secondary linkBtn" href="/salon">Salão</a>
           <a className="secondary linkBtn" href="/audit">Auditoria</a>
+          <a className="secondary linkBtn" href="/operations">Operações</a>
           <button className="secondary" onClick={signOut}>Sair</button>
         </div>
       </header>
