@@ -19,15 +19,15 @@ export async function buildDailySnapshot() {
 
   const snapshot = {
     snapshot_date: new Date().toISOString().slice(0,10),
-    total_products: products?.filter(p=>p.status!=="DESCARTADO").length ?? 0,
-    valid_products: products?.filter(p=>Number(p.score)>=75 && p.status!=="DESCARTADO").length ?? 0,
-    salon_products: products?.filter(p=>p.status==="SALAO").length ?? 0,
-    published_products: products?.filter(p=>p.status==="PUBLICADO").length ?? 0,
-    discarded_products: products?.filter(p=>p.status==="DESCARTADO").length ?? 0,
+    total_products: products?.filter((p:any)=>p.status!=="DESCARTADO").length ?? 0,
+    valid_products: products?.filter((p:any)=>Number(p.score)>=75 && p.status!=="DESCARTADO").length ?? 0,
+    salon_products: products?.filter((p:any)=>p.status==="SALAO").length ?? 0,
+    published_products: products?.filter((p:any)=>p.status==="PUBLICADO").length ?? 0,
+    discarded_products: products?.filter((p:any)=>p.status==="DESCARTADO").length ?? 0,
     supplier_count: suppliers?.length ?? 0,
-    homologated_suppliers: suppliers?.filter(s=>s.status==="HOMOLOGADO").length ?? 0,
-    blocked_publish_items: queue?.filter(q=>q.status==="BLOQUEADO").length ?? 0,
-    ready_publish_items: queue?.filter(q=>q.status==="PRONTO").length ?? 0
+    homologated_suppliers: suppliers?.filter((s:any)=>s.status==="HOMOLOGADO").length ?? 0,
+    blocked_publish_items: queue?.filter((q:any)=>q.status==="BLOQUEADO").length ?? 0,
+    ready_publish_items: queue?.filter((q:any)=>q.status==="PRONTO").length ?? 0
   };
 
   const { data, error } = await supabase
