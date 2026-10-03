@@ -29,7 +29,7 @@ export default function SettingsPage(){
   return <main className="shell">
     <header className="topbar">
       <div><p className="eyebrow">RL PIN • CONFIGURAÇÕES</p><h1>Regras <span>Centrais</span></h1><p className="sub">Os limites que controlam score, margem, fornecedor e risco.</p></div>
-      <a className="secondary linkBtn" href="/">Voltar ao painel</a>
+      <a className="secondary linkBtn backBtn" href="/">← Voltar ao painel</a>
     </header>
     {msg&&<div className="notice">{msg}</div>}
     <section className="card panel">
