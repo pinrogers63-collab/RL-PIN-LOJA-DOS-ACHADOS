@@ -23,7 +23,7 @@ export default function OperationsPage(){
   return <main className="shell">
     <header className="topbar">
       <div><p className="eyebrow">RL PIN • OPERAÇÕES</p><h1>Execuções & <span>Publicação</span></h1><p className="sub">Monitoramento das coletas, atualizações e fila de publicação.</p></div>
-      <a className="secondary linkBtn" href="/">Voltar ao painel</a>
+      <a className="secondary linkBtn backBtn" href="/">← Voltar ao painel</a>
     </header>
     {msg&&<div className="notice">{msg}</div>}
 
