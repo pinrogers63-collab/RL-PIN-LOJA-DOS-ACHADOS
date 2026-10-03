@@ -9,14 +9,16 @@ export default function OperationsPage(){
   const [runs,setRuns]=useState<any[]>([]);
   const [queue,setQueue]=useState<any[]>([]);
   const [msg,setMsg]=useState("");
+  const [mlStatus,setMlStatus]=useState<any|null>(null);
 
   useEffect(()=>{(async()=>{
     try{
       const supabase=getSupabaseBrowser();
       const {data}=await supabase.auth.getSession();
       if(!data.session){window.location.href="/login";return;}
-      const [r,q]=await Promise.all([listConnectorRuns(50),listPublishQueue()]);
+      const [r,q,mlRes]=await Promise.all([listConnectorRuns(50),listPublishQueue(),fetch("/api/integrations/mercadolivre/status",{cache:"no-store"})]);
       setRuns(r);setQueue(q);
+      if(mlRes.ok) setMlStatus(await mlRes.json());
     }catch(e){setMsg(e instanceof Error?e.message:"Falha ao carregar operações.");}
   })();},[]);
 
@@ -42,6 +44,15 @@ export default function OperationsPage(){
         <div className="platforms">{queue.map(q=><div className="platform" key={q.id}><div><strong>{q.products?.title??"Produto"}</strong><small>{q.platform}</small></div><span className="status">{q.status}</span></div>)}
         {!queue.length&&<p className="empty">Nenhum produto aguardando publicação.</p>}</div>
       </article>
+    </section>
+
+    <section className="card panel">
+      <div className="panelTitle"><div><p className="eyebrow">MERCADO LIVRE</p><h2>Conector oficial</h2></div><span className="badge">{mlStatus?.configured?"PRONTO PARA AUTORIZAR":"AGUARDANDO CREDENCIAIS"}</span></div>
+      <div className="platforms">
+        <div className="platform"><div><strong>OAuth</strong><small>{mlStatus?.configured?"Client ID e Secret configurados":"Faltam Client ID e/ou Secret"}</small></div>{mlStatus?.configured?<a className="primary linkBtn" href="/api/integrations/mercadolivre/start">Conectar Mercado Livre</a>:<span className="status">PENDENTE</span>}</div>
+        <div className="platform"><div><strong>Callback</strong><small>{mlStatus?.redirectUri??"Preparando..."}</small></div><span className="status">PRONTO</span></div>
+        <div className="platform"><div><strong>Webhook</strong><small>{mlStatus?.webhookUrl??"Preparando..."}</small></div><span className="status">PRONTO</span></div>
+      </div>
     </section>
 
     <section className="card panel">
