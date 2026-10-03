@@ -1,13 +1,29 @@
 const ML_AUTH_BASE = "https://auth.mercadolivre.com.br/authorization";
 const ML_TOKEN_URL = "https://api.mercadolibre.com/oauth/token";
 const ML_API_BASE = "https://api.mercadolibre.com";
+const DEFAULT_APP_URL = "https://rl-pin-loja-dos-achados-omini1.vercel.app";
+
+export function getMercadoLivrePublicConfig() {
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || DEFAULT_APP_URL).replace(/\/$/, "");
+  const redirectUri =
+    process.env.MERCADOLIVRE_REDIRECT_URI ||
+    `${appUrl}/api/integrations/mercadolivre/callback`;
+
+  return {
+    appUrl,
+    redirectUri,
+    webhookUrl: `${appUrl}/api/integrations/mercadolivre/webhook`,
+    clientIdConfigured: Boolean(process.env.MERCADOLIVRE_CLIENT_ID),
+    clientSecretConfigured: Boolean(process.env.MERCADOLIVRE_CLIENT_SECRET)
+  };
+}
 
 export function getMercadoLivreConfig() {
   const clientId = process.env.MERCADOLIVRE_CLIENT_ID;
   const clientSecret = process.env.MERCADOLIVRE_CLIENT_SECRET;
-  const redirectUri = process.env.MERCADOLIVRE_REDIRECT_URI;
+  const { redirectUri } = getMercadoLivrePublicConfig();
 
-  if (!clientId || !clientSecret || !redirectUri) {
+  if (!clientId || !clientSecret) {
     throw new Error("Credenciais do Mercado Livre ainda não configuradas.");
   }
 
