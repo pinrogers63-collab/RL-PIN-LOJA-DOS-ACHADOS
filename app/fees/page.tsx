@@ -70,7 +70,7 @@ export default function FeesPage(){
   return <main className="shell">
     <header className="topbar">
       <div><p className="eyebrow">RL PIN • TAXAS & MARGEM</p><h1>Perfis <span>Configuráveis</span></h1><p className="sub">Sem taxas engessadas: você atualiza quando cada marketplace mudar.</p></div>
-      <a className="secondary linkBtn" href="/">Voltar ao painel</a>
+      <a className="secondary linkBtn backBtn" href="/">← Voltar ao painel</a>
     </header>
     {msg&&<div className="notice">{msg}</div>}
 
