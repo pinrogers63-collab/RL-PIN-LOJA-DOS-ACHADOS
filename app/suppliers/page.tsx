@@ -74,7 +74,7 @@ export default function SuppliersPage() {
   return <main className="shell">
     <header className="topbar">
       <div><p className="eyebrow">RL PIN • FORNECEDORES</p><h1>Homologação <span>Premium</span></h1><p className="sub">Teste antes de confiar estoque, prazo e reputação da loja.</p></div>
-      <a className="secondary linkBtn" href="/">Voltar ao painel</a>
+      <a className="secondary linkBtn backBtn" href="/">← Voltar ao painel</a>
     </header>
 
     {msg && <div className="notice">{msg}</div>}
