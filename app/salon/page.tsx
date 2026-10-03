@@ -49,7 +49,7 @@ export default function SalonPage(){
   return <main className="shell">
     <header className="topbar">
       <div><p className="eyebrow">RL PIN • SALÃO DA VITÓRIA</p><h1>Criação <span>Premium</span></h1><p className="sub">Quatro conceitos, formatos por canal e figurino da Vitória.</p></div>
-      <a className="secondary linkBtn" href="/">Voltar ao painel</a>
+      <a className="secondary linkBtn backBtn" href="/">← Voltar ao painel</a>
     </header>
     {msg&&<div className="notice">{msg}</div>}
 
