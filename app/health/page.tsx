@@ -9,11 +9,13 @@ import { downloadCsv } from "@/lib/csv";
 export default function HealthPage(){
   const [health,setHealth]=useState<any|null>(null);
   const [snapshots,setSnapshots]=useState<any[]>([]);
+  const [readiness,setReadiness]=useState<any|null>(null);
   const [msg,setMsg]=useState("");
 
   async function refresh(){
-    const [h,s]=await Promise.all([getSystemHealth(),listDailySnapshots()]);
+    const [h,s,r]=await Promise.all([getSystemHealth(),listDailySnapshots(),fetch("/api/readiness",{cache:"no-store"})]);
     setHealth(h);setSnapshots(s);
+    if(r.ok) setReadiness(await r.json());
   }
 
   useEffect(()=>{(async()=>{
@@ -52,6 +54,19 @@ export default function HealthPage(){
       <article className="card metric"><small>Produtos</small><strong>{health.products}</strong><span>registros</span></article>
       <article className="card metric"><small>Fila pronta</small><strong>{health.publishReady}</strong><span>publicação</span></article>
       <article className="card metric"><small>Bloqueados</small><strong>{health.publishBlocked}</strong><span>Guardião</span></article>
+    </section>
+
+    <section className="card panel">
+      <div className="panelTitle">
+        <div><p className="eyebrow">PRONTIDÃO EXTERNA</p><h2>O que falta para operar 100%</h2></div>
+        <span className="badge">{readiness ? readiness.requiredReady + "/" + readiness.requiredTotal + " essenciais" : "verificando"}</span>
+      </div>
+      <div className="platforms">
+        {readiness?.checks?.map((c:any)=><div className="platform" key={c.id}>
+          <div><strong>{c.label}</strong><small>{c.note}</small></div>
+          <span className="status">{c.ready ? "PRONTO" : c.required ? "FALTA VOCÊ" : "OPCIONAL"}</span>
+        </div>)}
+      </div>
     </section>
 
     <section className="grid2">
