@@ -20,3 +20,7 @@ Construir uma central premium para:
 - 15:00: checagem final do dia
 
 Integrações externas só serão marcadas como conectadas quando houver credenciais e validação reais.
+
+
+## Mercado Livre
+A integração oficial está preparada para OAuth Authorization Code + Refresh Token, callback e webhook. Em produção, use `MERCADOLIVRE_CLIENT_ID` e `MERCADOLIVRE_CLIENT_SECRET` na Vercel.
