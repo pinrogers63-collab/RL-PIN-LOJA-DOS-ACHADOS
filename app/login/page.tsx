@@ -19,7 +19,8 @@ export default function LoginPage() {
       if (error) throw error;
       window.location.href = "/";
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Não foi possível entrar.");
+      const raw = err instanceof Error ? err.message : "";
+      setMessage(raw === "Failed to fetch" ? "Banco temporariamente indisponível. Aguarde alguns instantes e tente novamente." : raw || "Não foi possível entrar.");
     } finally {
       setBusy(false);
     }
@@ -34,7 +35,8 @@ export default function LoginPage() {
       if (error) throw error;
       setMessage("Cadastro criado. Confirme o e-mail se o Supabase solicitar confirmação.");
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Não foi possível criar a conta.");
+      const raw = err instanceof Error ? err.message : "";
+      setMessage(raw === "Failed to fetch" ? "Banco temporariamente indisponível. Aguarde alguns instantes e tente novamente." : raw || "Não foi possível criar a conta.");
     } finally {
       setBusy(false);
     }
