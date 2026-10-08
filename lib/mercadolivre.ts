@@ -25,17 +25,22 @@ type StoredMarketplaceToken = {
 
 function getTokenStoreConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   const secret = process.env.CRON_SECRET;
-  if (!url || !key || !secret) throw new Error("Token store não configurado.");
-  return { url: url.replace(/\/$/, ""), key, secret };
+  if (!url || !secret) throw new Error("Token store não configurado.");
+  return {
+    endpoint: `${url.replace(/\\\/$/, "")}/functions/v1/marketplace-token-store`,
+    secret
+  };
 }
 
-async function rpc<T>(fn: string, body: Record<string, unknown>): Promise<T> {
-  const { url, key } = getTokenStoreConfig();
-  const response = await fetch(`${url}/rest/v1/rpc/${fn}`, {
+async function tokenStore<T>(body: Record<string, unknown>): Promise<T> {
+  const { endpoint, secret } = getTokenStoreConfig();
+  const response = await fetch(endpoint, {
     method: "POST",
-    headers: { apikey: key, "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+      "x-rlpin-secret": secret
+    },
     body: JSON.stringify(body),
     cache: "no-store"
   });
@@ -108,26 +113,24 @@ export async function refreshMercadoLivreToken(refreshToken: string) {
 }
 
 export async function persistMercadoLivreToken(token: MercadoLivreToken) {
-  const { secret } = getTokenStoreConfig();
-  await rpc<boolean>("save_marketplace_token", {
-    p_secret: secret,
-    p_platform: "mercado_livre",
-    p_external_user_id: String(token.user_id),
-    p_access_token: token.access_token,
-    p_refresh_token: token.refresh_token ?? null,
-    p_token_type: token.token_type ?? "Bearer",
-    p_scope: token.scope ?? null,
-    p_expires_in: token.expires_in
+  await tokenStore<{ ok: boolean }>({
+    action: "save",
+    platform: "mercado_livre",
+    external_user_id: String(token.user_id),
+    access_token: token.access_token,
+    refresh_token: token.refresh_token ?? null,
+    token_type: token.token_type ?? "Bearer",
+    scope: token.scope ?? null,
+    expires_in: token.expires_in
   });
 }
 
 export async function getStoredMercadoLivreToken(): Promise<StoredMarketplaceToken | null> {
-  const { secret } = getTokenStoreConfig();
-  const rows = await rpc<StoredMarketplaceToken[]>("get_marketplace_token", {
-    p_secret: secret,
-    p_platform: "mercado_livre"
+  const result = await tokenStore<{ ok: boolean; token: StoredMarketplaceToken | null }>({
+    action: "get",
+    platform: "mercado_livre"
   });
-  return rows?.[0] ?? null;
+  return result.token ?? null;
 }
 
 export async function getValidMercadoLivreToken() {
