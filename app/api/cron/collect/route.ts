@@ -1,4 +1,4 @@
-import { connectors } from "@/lib/connectors";
+import { getRunnableMarketplaceStatuses } from "@/lib/integration-status";
 
 function authorized(request: Request) {
   const secret = process.env.CRON_SECRET;
@@ -7,20 +7,19 @@ function authorized(request: Request) {
 }
 
 export async function GET(request: Request) {
-  if (!authorized(request)) {
-    return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
-  }
+  if (!authorized(request)) return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
 
-  const now = new Date().toISOString();
+  const connectors = await getRunnableMarketplaceStatuses();
   return Response.json({
     ok: true,
-    mode: "DRY_RUN",
-    at: now,
+    mode: "SAFE_READY",
+    at: new Date().toISOString(),
     connectors: connectors.map((c) => ({
       id: c.id,
+      configured: c.configured,
       connected: c.connected,
       action: c.connected ? "ready_to_collect" : "skipped_not_connected"
     })),
-    note: "Cron operacional preparado sem inventar coleta externa enquanto as APIs não estiverem conectadas."
+    note: "A rotina só libera coleta para conectores realmente habilitados."
   });
 }
