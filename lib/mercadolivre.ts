@@ -28,7 +28,7 @@ function getTokenStoreConfig() {
   const secret = process.env.CRON_SECRET;
   if (!url || !secret) throw new Error("Token store não configurado.");
   return {
-    endpoint: `${url.replace(/\\\/$/, "")}/functions/v1/marketplace-token-store`,
+    endpoint: `${url.endsWith("/") ? url.slice(0, -1) : url}/functions/v1/marketplace-token-store`,
     secret
   };
 }
