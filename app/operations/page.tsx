@@ -47,11 +47,11 @@ export default function OperationsPage(){
     </section>
 
     <section className="card panel">
-      <div className="panelTitle"><div><p className="eyebrow">MERCADO LIVRE</p><h2>Conector oficial</h2></div><span className="badge">{mlStatus?.configured?"PRONTO PARA AUTORIZAR":"AGUARDANDO CREDENCIAIS"}</span></div>
+      <div className="panelTitle"><div><p className="eyebrow">MERCADO LIVRE</p><h2>Conector oficial</h2></div><span className="badge">{mlStatus?.connected?"CONECTADO":"AGUARDANDO AUTORIZAÇÃO"}</span></div>
       <div className="platforms">
-        <div className="platform"><div><strong>OAuth</strong><small>{mlStatus?.configured?"Client ID e Secret configurados":"Faltam Client ID e/ou Secret"}</small></div>{mlStatus?.configured?<a className="primary linkBtn" href="/api/integrations/mercadolivre/start">Conectar Mercado Livre</a>:<span className="status">PENDENTE</span>}</div>
-        <div className="platform"><div><strong>Callback</strong><small>{mlStatus?.redirectUri??"Preparando..."}</small></div><span className="status">PRONTO</span></div>
-        <div className="platform"><div><strong>Webhook</strong><small>{mlStatus?.webhookUrl??"Preparando..."}</small></div><span className="status">PRONTO</span></div>
+        <div className="platform"><div><strong>OAuth</strong><small>{mlStatus?.connected?"Conta autorizada e token persistido":"Autorização OAuth necessária"}</small></div>{mlStatus?.connected?<span className="status">CONECTADO</span>:<a className="primary linkBtn" href="/api/integrations/mercadolivre/start">Conectar Mercado Livre</a>}</div>
+        <div className="platform"><div><strong>Callback</strong><small>Endpoint OAuth seguro</small></div><span className="status">PRONTO</span></div>
+        <div className="platform"><div><strong>Webhook</strong><small>Notificações configuradas</small></div><span className="status">PRONTO</span></div>
       </div>
     </section>
 
