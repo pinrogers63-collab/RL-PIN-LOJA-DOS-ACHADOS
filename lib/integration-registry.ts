@@ -49,8 +49,7 @@ export const integrationRegistry: IntegrationDefinition[] = [
     kind: "marketplace",
     required: false,
     credentialEnv: ["AMAZON_SP_API_CLIENT_ID", "AMAZON_SP_API_CLIENT_SECRET"],
-    note: "Slot futuro preparado para integração oficial.",
-    future: true
+    note: "Conector preparado para ativação oficial quando as credenciais forem liberadas."
   },
   {
     id: "image_ai",
