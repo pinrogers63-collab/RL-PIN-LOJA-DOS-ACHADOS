@@ -12,6 +12,7 @@ export async function GET() {
     if (c.id === "shopee") return { ...c, connected: Boolean(process.env.SHOPEE_PARTNER_ID && process.env.SHOPEE_PARTNER_KEY && process.env.SHOPEE_SHOP_ID) };
     if (c.id === "tiktok") return { ...c, connected: Boolean(process.env.TIKTOK_SHOP_APP_KEY && process.env.TIKTOK_SHOP_APP_SECRET) };
     if (c.id === "pinterest") return { ...c, connected: Boolean(process.env.PINTEREST_APP_ID && process.env.PINTEREST_APP_SECRET) };
+    if (c.id === "amazon") return { ...c, connected: Boolean(process.env.AMAZON_SP_API_CLIENT_ID && process.env.AMAZON_SP_API_CLIENT_SECRET) };
     return c;
   });
 
