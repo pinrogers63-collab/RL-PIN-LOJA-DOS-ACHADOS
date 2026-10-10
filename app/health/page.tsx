@@ -10,12 +10,14 @@ export default function HealthPage(){
   const [health,setHealth]=useState<any|null>(null);
   const [snapshots,setSnapshots]=useState<any[]>([]);
   const [readiness,setReadiness]=useState<any|null>(null);
+  const [liveConnectors,setLiveConnectors]=useState<any[]>([]);
   const [msg,setMsg]=useState("");
 
   async function refresh(){
-    const [h,s,r]=await Promise.all([getSystemHealth(),listDailySnapshots(),fetch("/api/readiness",{cache:"no-store"})]);
+    const [h,s,r,c]=await Promise.all([getSystemHealth(),listDailySnapshots(),fetch("/api/readiness",{cache:"no-store"}),fetch("/api/connectors",{cache:"no-store"})]);
     setHealth(h);setSnapshots(s);
     if(r.ok) setReadiness(await r.json());
+    if(c.ok){ const data=await c.json(); setLiveConnectors(data.connectors??[]); }
   }
 
   useEffect(()=>{(async()=>{
@@ -71,8 +73,8 @@ export default function HealthPage(){
 
     <section className="grid2">
       <article className="card panel">
-        <div className="panelTitle"><div><p className="eyebrow">CONECTORES</p><h2>Estado atual</h2></div><span className="badge">{health.connectors.length} fontes</span></div>
-        <div className="platforms">{health.connectors.map((c:any)=><div className="platform" key={c.id}><div><strong>{c.name}</strong><small>{c.last_error??"Sem erro registrado"}</small></div><span className="status">{c.connected?"CONECTADO":"AGUARDANDO"}</span></div>)}</div>
+        <div className="panelTitle"><div><p className="eyebrow">CONECTORES</p><h2>Estado atual</h2></div><span className="badge">{liveConnectors.length} fontes</span></div>
+        <div className="platforms">{liveConnectors.map((c:any)=><div className="platform" key={c.id}><div><strong>{c.name}</strong><small>{c.notes??"Conector preparado"}</small></div><span className="status">{c.connected?"CONECTADO":"AGUARDANDO"}</span></div>)}</div>
       </article>
 
       <article className="card panel">
