@@ -194,7 +194,7 @@ export default function Dashboard() {
             <span className={cloudReady ? "dot online" : "dot"} />
             <div>
               <strong>{cloudReady ? "Banco em nuvem conectado" : "Banco não conectado"}</strong>
-              <small>Coletas planejadas: 06:00 • 10:00 • 15:00</small>
+              <small>Coletas planejadas: 09:00 • 15:00</small>
             </div>
           </div>
           <a className="secondary linkBtn" href="/suppliers">Fornecedores</a>
@@ -248,14 +248,14 @@ export default function Dashboard() {
         <article className="card panel">
           <div className="panelTitle">
             <div><p className="eyebrow">FONTES</p><h2>Plataformas</h2></div>
-            <span className="badge">06h • 10h • 15h</span>
+            <span className="badge">09h • 15h</span>
           </div>
           <div className="platforms">
             {[
-              ["shopee", "06:00"],
-              ["mercado_livre", "06:05"],
-              ["tiktok", "06:12"],
-              ["amazon", "06:18"],
+              ["shopee", "09:00"],
+              ["mercado_livre", "09:00"],
+              ["tiktok", "09:00"],
+              ["amazon", "09:00"],
               ["pinterest", "Distribuição"]
             ].map(([id, next]) => (
               <div className="platform" key={id}>
