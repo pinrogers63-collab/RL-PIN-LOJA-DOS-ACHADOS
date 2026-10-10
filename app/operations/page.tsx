@@ -33,9 +33,8 @@ export default function OperationsPage(){
       <article className="card panel">
         <div className="panelTitle"><div><p className="eyebrow">JANELAS</p><h2>Agenda operacional</h2></div><span className="badge">BRT</span></div>
         <div className="platforms">
-          <div className="platform"><div><strong>06:00</strong><small>Coleta principal</small></div><span className="status">PREPARADO</span></div>
-          <div className="platform"><div><strong>10:00</strong><small>Preço, estoque e tendência</small></div><span className="status">PREPARADO</span></div>
-          <div className="platform"><div><strong>15:00</strong><small>Última atualização do dia</small></div><span className="status">PREPARADO</span></div>
+          <div className="platform"><div><strong>09:00</strong><small>Coleta principal</small></div><span className="status">PREPARADO</span></div>
+          <div className="platform"><div><strong>15:00</strong><small>Preço, estoque e tendência</small></div><span className="status">PREPARADO</span></div>
         </div>
       </article>
 
