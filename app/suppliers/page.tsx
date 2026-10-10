@@ -13,6 +13,11 @@ type SupplierRow = {
   channels: string[];
   ships_directly: boolean;
   invoice: boolean;
+  invoice_mode: "A_VALIDAR" | "FORNECEDOR_EMITE" | "RL_PIN_EMITE";
+  blind_shipping: boolean;
+  delivery_days: number | null;
+  returns_supported: boolean;
+  source_url: string | null;
   tracking: boolean;
   dispatch_hours: number | null;
   stock_sync: boolean;
@@ -24,7 +29,7 @@ export default function SuppliersPage() {
   const [rows,setRows] = useState<SupplierRow[]>([]);
   const [msg,setMsg] = useState("");
   const [form,setForm] = useState({
-    name:"", dispatchHours:"24", shipsDirectly:true, invoice:true, tracking:true, stockSync:false, notes:""
+    name:"", sourceUrl:"", dispatchHours:"24", deliveryDays:"", shipsDirectly:true, invoice:true, invoiceMode:"A_VALIDAR" as "A_VALIDAR"|"FORNECEDOR_EMITE"|"RL_PIN_EMITE", blindShipping:false, returnsSupported:false, tracking:true, stockSync:false, notes:""
   });
 
   async function refresh(){
@@ -59,13 +64,18 @@ export default function SuppliersPage() {
         channels:[],
         shipsDirectly:form.shipsDirectly,
         invoice:form.invoice,
+        invoiceMode:form.invoiceMode,
+        blindShipping:form.blindShipping,
+        deliveryDays:form.deliveryDays ? Number(form.deliveryDays) : undefined,
+        returnsSupported:form.returnsSupported,
+        sourceUrl:form.sourceUrl.trim() || undefined,
         tracking:form.tracking,
         dispatchHours:Number(form.dispatchHours||"0"),
         stockSync:form.stockSync,
         testedOrders:0,
         notes:form.notes
       });
-      setForm({name:"",dispatchHours:"24",shipsDirectly:true,invoice:true,tracking:true,stockSync:false,notes:""});
+      setForm({name:"",sourceUrl:"",dispatchHours:"24",deliveryDays:"",shipsDirectly:true,invoice:true,invoiceMode:"A_VALIDAR",blindShipping:false,returnsSupported:false,tracking:true,stockSync:false,notes:""});
       await refresh();
       setMsg("Fornecedor salvo como EM TESTE.");
     }catch(e){ setMsg(e instanceof Error ? e.message : "Falha ao salvar fornecedor."); }
@@ -83,9 +93,14 @@ export default function SuppliersPage() {
       <div className="panelTitle"><div><p className="eyebrow">NOVO FORNECEDOR</p><h2>Cadastro para teste</h2></div><span className="badge">Nunca homologar sem teste</span></div>
       <form className="supplierForm" onSubmit={add}>
         <input required placeholder="Nome do fornecedor" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>
+        <input placeholder="Site / origem do fornecedor" value={form.sourceUrl} onChange={e=>setForm({...form,sourceUrl:e.target.value})}/>
         <input placeholder="Despacho em horas" inputMode="numeric" value={form.dispatchHours} onChange={e=>setForm({...form,dispatchHours:e.target.value})}/>
+        <input placeholder="Entrega estimada em dias" inputMode="numeric" value={form.deliveryDays} onChange={e=>setForm({...form,deliveryDays:e.target.value})}/>
+        <select value={form.invoiceMode} onChange={e=>setForm({...form,invoiceMode:e.target.value as any})}><option value="A_VALIDAR">NF: a validar</option><option value="FORNECEDOR_EMITE">NF: fornecedor emite</option><option value="RL_PIN_EMITE">NF: RL PIN emite</option></select>
         <label><input type="checkbox" checked={form.shipsDirectly} onChange={e=>setForm({...form,shipsDirectly:e.target.checked})}/> Envia direto</label>
         <label><input type="checkbox" checked={form.invoice} onChange={e=>setForm({...form,invoice:e.target.checked})}/> Nota fiscal</label>
+        <label><input type="checkbox" checked={form.blindShipping} onChange={e=>setForm({...form,blindShipping:e.target.checked})}/> Envio sem marca do fornecedor</label>
+        <label><input type="checkbox" checked={form.returnsSupported} onChange={e=>setForm({...form,returnsSupported:e.target.checked})}/> Aceita devolução</label>
         <label><input type="checkbox" checked={form.tracking} onChange={e=>setForm({...form,tracking:e.target.checked})}/> Rastreio</label>
         <label><input type="checkbox" checked={form.stockSync} onChange={e=>setForm({...form,stockSync:e.target.checked})}/> Estoque sincronizado</label>
         <input placeholder="Observações" value={form.notes} onChange={e=>setForm({...form,notes:e.target.value})}/>
@@ -97,12 +112,12 @@ export default function SuppliersPage() {
       <div className="panelTitle"><div><p className="eyebrow">HOMOLOGAÇÃO</p><h2>Fornecedores cadastrados</h2></div><span className="badge">{rows.length} fornecedores</span></div>
       <div className="tableWrap">
         <table>
-          <thead><tr><th>Fornecedor</th><th>Status</th><th>Despacho</th><th>NF</th><th>Rastreio</th><th>Sync</th><th>Testes</th><th>Score</th><th>Ações</th></tr></thead>
+          <thead><tr><th>Fornecedor</th><th>Status</th><th>Despacho</th><th>Entrega</th><th>NF</th><th>Envio neutro</th><th>Rastreio</th><th>Devolução</th><th>Sync</th><th>Testes</th><th>Score</th><th>Ações</th></tr></thead>
           <tbody>{rows.map(s=>{
             const score=supplierScore({
               id:s.id,name:s.name,status:s.status,channels:s.channels,shipsDirectly:s.ships_directly,invoice:s.invoice,tracking:s.tracking,dispatchHours:s.dispatch_hours ?? undefined,stockSync:s.stock_sync,testedOrders:s.tested_orders,notes:s.notes ?? undefined
             });
-            return <tr key={s.id}><td>{s.name}</td><td><span className="status">{s.status}</span></td><td>{s.dispatch_hours ?? "-"}h</td><td>{s.invoice?"Sim":"Não"}</td><td>{s.tracking?"Sim":"Não"}</td><td>{s.stock_sync?"Sim":"Não"}</td><td>{s.tested_orders}</td><td>{score}</td><td className="actions"><button onClick={()=>testSupplier(s.id,true)}>Teste OK</button><button onClick={()=>testSupplier(s.id,false)}>Reprovou</button></td></tr>
+            return <tr key={s.id}><td>{s.name}</td><td><span className="status">{s.status}</span></td><td>{s.dispatch_hours ?? "-"}h</td><td>{s.delivery_days ?? "-"} dias</td><td>{s.invoice_mode==="FORNECEDOR_EMITE"?"Fornecedor":s.invoice_mode==="RL_PIN_EMITE"?"RL PIN":"A validar"}</td><td>{s.blind_shipping?"Sim":"Não"}</td><td>{s.tracking?"Sim":"Não"}</td><td>{s.returns_supported?"Sim":"Não"}</td><td>{s.stock_sync?"Sim":"Não"}</td><td>{s.tested_orders}</td><td>{score}</td><td className="actions"><button onClick={()=>testSupplier(s.id,true)}>Teste OK</button><button onClick={()=>testSupplier(s.id,false)}>Reprovou</button></td></tr>
           })}</tbody>
         </table>
       </div>
