@@ -39,6 +39,15 @@ export const connectors: ConnectorState[] = [
     notes: "Dependente de acesso e permissões da conta."
   },
   {
+    id: "amazon",
+    name: "Amazon",
+    connected: false,
+    mode: "API",
+    primaryWindow: "06:18",
+    refreshWindows: ["10:00", "15:00"],
+    notes: "Conector preparado para ativação via Amazon Selling Partner API."
+  },
+  {
     id: "pinterest",
     name: "Pinterest",
     connected: false,
