@@ -14,7 +14,7 @@ export async function listFeeProfiles() {
 
 export async function upsertFeeProfile(input: {
   id?: string;
-  platform: "shopee"|"mercado_livre"|"tiktok"|"pinterest";
+  platform: "shopee"|"mercado_livre"|"tiktok"|"pinterest"|"amazon"|"outros";
   name: string;
   percentageFee: number;
   fixedFee: number;
