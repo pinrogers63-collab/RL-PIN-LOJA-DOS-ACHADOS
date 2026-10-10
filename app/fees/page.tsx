@@ -5,7 +5,7 @@ import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { listFeeProfiles, upsertFeeProfile } from "@/lib/fee-profile-repository";
 import { calculateProfit } from "@/lib/calculator";
 
-type Platform="shopee"|"mercado_livre"|"tiktok"|"pinterest";
+type Platform="shopee"|"mercado_livre"|"tiktok"|"pinterest"|"amazon"|"outros";
 
 export default function FeesPage(){
   const [profiles,setProfiles]=useState<any[]>([]);
@@ -79,7 +79,7 @@ export default function FeesPage(){
         <div className="panelTitle"><div><p className="eyebrow">PERFIL</p><h2>Configurar taxas</h2></div><span className="badge">editável</span></div>
         <form className="feeForm" onSubmit={save}>
           <select value={form.platform} onChange={e=>setForm({...form,platform:e.target.value as Platform})}>
-            <option value="shopee">Shopee</option><option value="mercado_livre">Mercado Livre</option><option value="tiktok">TikTok Shop</option><option value="pinterest">Pinterest</option>
+            <option value="shopee">Shopee</option><option value="mercado_livre">Mercado Livre</option><option value="tiktok">TikTok Shop</option><option value="pinterest">Pinterest</option><option value="amazon">Amazon</option><option value="outros">Outras plataformas</option>
           </select>
           <input placeholder="Nome do perfil" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>
           <input placeholder="% taxa marketplace" inputMode="decimal" value={form.percentageFee} onChange={e=>setForm({...form,percentageFee:e.target.value})}/>
