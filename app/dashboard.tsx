@@ -7,7 +7,7 @@ import { getProductHistory } from "@/lib/history-repository";
 import { validateAndEnqueue } from "@/lib/publish-service";
 
 type Status = "NOVO" | "EM_ALTA" | "OBSERVAR" | "APROVADO" | "SALAO" | "PUBLICADO" | "DESCARTADO";
-type PlatformId = "shopee" | "mercado_livre" | "tiktok" | "pinterest" | "amazon";
+type PlatformId = "shopee" | "mercado_livre" | "tiktok" | "pinterest" | "amazon" | "outros";
 
 type CloudProduct = {
   id: string;
@@ -26,7 +26,8 @@ const platformLabel: Record<PlatformId,string> = {
   mercado_livre: "Mercado Livre",
   tiktok: "TikTok Shop",
   pinterest: "Pinterest",
-  amazon: "Amazon"
+  amazon: "Amazon",
+  outros: "Outras plataformas"
 };
 
 function brl(v: number) {
@@ -223,7 +224,7 @@ export default function Dashboard() {
             <p className="eyebrow">IMPORTADOR CLOUD</p>
             <h2>Adicionar produto à esteira real</h2>
           </div>
-          <span className="badge">Supabase ativo</span>
+          <span className="badge">Esteira ativa</span>
         </div>
 
         <form className="productForm" onSubmit={addProduct}>
@@ -234,6 +235,7 @@ export default function Dashboard() {
             <option value="tiktok">TikTok Shop</option>
             <option value="pinterest">Pinterest</option>
             <option value="amazon">Amazon</option>
+            <option value="outros">Outras plataformas</option>
           </select>
           <input placeholder="Custo R$" inputMode="decimal" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} />
           <input placeholder="Preço mercado R$" inputMode="decimal" value={form.marketPrice} onChange={(e) => setForm({ ...form, marketPrice: e.target.value })} />
