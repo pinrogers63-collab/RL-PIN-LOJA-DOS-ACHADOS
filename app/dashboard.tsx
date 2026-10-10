@@ -7,7 +7,7 @@ import { getProductHistory } from "@/lib/history-repository";
 import { validateAndEnqueue } from "@/lib/publish-service";
 
 type Status = "NOVO" | "EM_ALTA" | "OBSERVAR" | "APROVADO" | "SALAO" | "PUBLICADO" | "DESCARTADO";
-type PlatformId = "shopee" | "mercado_livre" | "tiktok" | "pinterest";
+type PlatformId = "shopee" | "mercado_livre" | "tiktok" | "pinterest" | "amazon";
 
 type CloudProduct = {
   id: string;
@@ -25,7 +25,8 @@ const platformLabel: Record<PlatformId,string> = {
   shopee: "Shopee",
   mercado_livre: "Mercado Livre",
   tiktok: "TikTok Shop",
-  pinterest: "Pinterest"
+  pinterest: "Pinterest",
+  amazon: "Amazon"
 };
 
 function brl(v: number) {
@@ -45,6 +46,7 @@ export default function Dashboard() {
   const [historyTitle, setHistoryTitle] = useState("");
   const [historyRows, setHistoryRows] = useState<any[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [connectorState, setConnectorState] = useState<Record<string, boolean>>({});
   const [form, setForm] = useState({
     title: "",
     platform: "shopee" as PlatformId,
@@ -75,6 +77,13 @@ export default function Dashboard() {
           return;
         }
         await refresh();
+        try {
+          const res = await fetch("/api/connectors", { cache: "no-store" });
+          if (res.ok) {
+            const data = await res.json();
+            setConnectorState(Object.fromEntries((data.connectors ?? []).map((c: any) => [c.id, Boolean(c.connected)])));
+          }
+        } catch {}
       } catch (err) {
         setMessage(err instanceof Error ? err.message : "Falha ao iniciar a RL PIN.");
         setLoading(false);
@@ -193,6 +202,7 @@ export default function Dashboard() {
           <a className="secondary linkBtn" href="/operations">Operações</a>
           <a className="secondary linkBtn" href="/fees">Taxas</a>
           <a className="secondary linkBtn" href="/health">Saúde</a>
+          <a className="secondary linkBtn" href="/integrations">Integrações</a>
           <a className="secondary linkBtn" href="/settings">Configurações</a>
           <button className="secondary" onClick={signOut}>Sair</button>
         </div>
@@ -223,6 +233,7 @@ export default function Dashboard() {
             <option value="mercado_livre">Mercado Livre</option>
             <option value="tiktok">TikTok Shop</option>
             <option value="pinterest">Pinterest</option>
+            <option value="amazon">Amazon</option>
           </select>
           <input placeholder="Custo R$" inputMode="decimal" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} />
           <input placeholder="Preço mercado R$" inputMode="decimal" value={form.marketPrice} onChange={(e) => setForm({ ...form, marketPrice: e.target.value })} />
@@ -242,11 +253,12 @@ export default function Dashboard() {
               ["shopee", "06:00"],
               ["mercado_livre", "06:05"],
               ["tiktok", "06:12"],
+              ["amazon", "06:18"],
               ["pinterest", "Distribuição"]
             ].map(([id, next]) => (
               <div className="platform" key={id}>
                 <div><strong>{platformLabel[id as PlatformId]}</strong><small>Próxima: {next}</small></div>
-                <div className="platformRight"><b>{active.filter((p) => p.platform === id).length}</b><span>não conectado</span></div>
+                <div className="platformRight"><b>{active.filter((p) => p.platform === id).length}</b><span>{connectorState[id] ? "conectado" : "não conectado"}</span></div>
               </div>
             ))}
           </div>
