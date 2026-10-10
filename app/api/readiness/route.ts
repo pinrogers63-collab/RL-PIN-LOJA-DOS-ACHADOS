@@ -20,7 +20,7 @@ export async function GET() {
       label: "Automação Vercel",
       ready: Boolean(process.env.CRON_SECRET),
       required: true,
-      note: "Rotinas 06h, 10h e 15h configuradas."
+      note: "Rotinas 09h e 15h configuradas."
     },
     ...integrationRegistry.map((item) => ({
       id: item.id,
