@@ -11,7 +11,7 @@ export async function listPublishQueue() {
   return data ?? [];
 }
 
-export async function enqueueForPublish(productId: string, platform: "shopee"|"mercado_livre"|"tiktok"|"pinterest", guardResult: unknown) {
+export async function enqueueForPublish(productId: string, platform: "shopee"|"mercado_livre"|"tiktok"|"pinterest"|"amazon"|"outros", guardResult: unknown) {
   const supabase = getSupabaseBrowser();
   const { data, error } = await supabase
     .from("publish_queue")
