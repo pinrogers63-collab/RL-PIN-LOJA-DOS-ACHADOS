@@ -55,5 +55,14 @@ export const connectors: ConnectorState[] = [
     primaryWindow: "Após aprovação",
     refreshWindows: [],
     notes: "Usado como canal de distribuição/catálogo, não como fonte principal de garimpo."
+  },
+  {
+    id: "outros",
+    name: "Outras plataformas",
+    connected: false,
+    mode: "API",
+    primaryWindow: "Sob configuração",
+    refreshWindows: [],
+    notes: "Espaço de expansão para novos marketplaces e canais adicionados pela Central de Integrações."
   }
 ];
