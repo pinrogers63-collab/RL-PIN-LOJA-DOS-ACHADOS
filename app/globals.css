@@ -123,3 +123,9 @@ footer{display:flex;justify-content:space-between;color:#657180;font-size:12px;p
 }
 
 .backBtn{white-space:nowrap;flex:0 0 auto}
+
+
+.pageNavArrows{position:fixed;left:18px;bottom:18px;z-index:90;display:flex;gap:8px}
+.pageNavArrows button{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:#111821;color:var(--text);font-size:21px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.28)}
+.pageNavArrows button:hover{border-color:var(--accent2);color:var(--accent)}
+@media(max-width:600px){.pageNavArrows{left:12px;bottom:12px}.pageNavArrows button{width:38px;height:38px}}
