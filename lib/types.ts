@@ -1,4 +1,4 @@
-export type PlatformId = "shopee" | "mercado_livre" | "tiktok" | "pinterest";
+export type PlatformId = "shopee" | "mercado_livre" | "tiktok" | "pinterest" | "amazon";
 
 export type ProductStatus =
   | "NOVO"
