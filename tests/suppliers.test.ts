@@ -8,6 +8,7 @@ describe("supplier", () => {
     channels:["shopee"],
     shipsDirectly:true,
     invoice:true,
+    invoiceMode:"FORNECEDOR_EMITE",
     tracking:true,
     dispatchHours:24,
     stockSync:true,
@@ -16,6 +17,10 @@ describe("supplier", () => {
 
   it("calcula score alto para fornecedor completo", () => {
     expect(supplierScore(s)).toBeGreaterThanOrEqual(80);
+  });
+
+  it("bloqueia homologação sem NF verificada", () => {
+    expect(canHomologate({...s, invoiceMode:"A_VALIDAR"})).toBe(false);
   });
 
   it("permite homologação após testes", () => {
