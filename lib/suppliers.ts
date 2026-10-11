@@ -32,5 +32,5 @@ export function supplierScore(s: Supplier) {
 }
 
 export function canHomologate(s: Supplier) {
-  return supplierScore(s) >= 80 && s.testedOrders >= 3 && s.status !== "BLOQUEADO";
+  return supplierScore(s) >= 80 && s.testedOrders >= 3 && s.status !== "BLOQUEADO" && s.invoice && s.invoiceMode !== undefined && s.invoiceMode !== "A_VALIDAR" && s.shipsDirectly && s.tracking;
 }
