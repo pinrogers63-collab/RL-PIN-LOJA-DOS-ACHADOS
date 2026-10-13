@@ -28,7 +28,9 @@ export default function OperationsPage(){
   async function loadTrends(){
     setTrendLoading(true);setMsg("");
     try {
-      const response=await fetch("/api/integrations/mercadolivre/trends",{cache:"no-store"});
+      const {data:sessionData}=await getSupabaseBrowser().auth.getSession();
+      if(!sessionData.session) throw new Error("Entre novamente na sua conta.");
+      const response=await fetch("/api/integrations/mercadolivre/trends",{cache:"no-store",headers:{authorization:`Bearer ${sessionData.session.access_token}`}});
       const data=await response.json();
       if(!response.ok) throw new Error(data.error??"Falha ao consultar tendências.");
       setTrends(data.trends??[]);setTrendFetched(true);
