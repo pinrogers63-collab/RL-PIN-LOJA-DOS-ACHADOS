@@ -12,7 +12,9 @@ describe("supplier", () => {
     tracking:true,
     dispatchHours:24,
     stockSync:true,
-    testedOrders:3
+    testedOrders:3,
+    passedTests:3,
+    failedTests:0
   };
 
   it("calcula score alto para fornecedor completo", () => {
@@ -21,6 +23,14 @@ describe("supplier", () => {
 
   it("bloqueia homologação sem NF verificada", () => {
     expect(canHomologate({...s, invoiceMode:"A_VALIDAR"})).toBe(false);
+  });
+
+  it("reprovação bloqueia homologação", () => {
+    expect(canHomologate({...s, failedTests:1})).toBe(false);
+  });
+
+  it("não confunde tentativas com testes aprovados", () => {
+    expect(canHomologate({...s, testedOrders:3, passedTests:1})).toBe(false);
   });
 
   it("permite homologação após testes", () => {
