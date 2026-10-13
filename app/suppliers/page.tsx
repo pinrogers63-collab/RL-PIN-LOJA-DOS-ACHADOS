@@ -18,6 +18,15 @@ type SupplierRow = {
   delivery_days: number | null;
   returns_supported: boolean;
   source_url: string | null;
+  monthly_fee: number | null;
+  setup_fee: number | null;
+  api_fee: number | null;
+  per_order_fee: number | null;
+  minimum_balance: number | null;
+  lockin_months: number | null;
+  cancellation_terms: string | null;
+  evidence_url: string | null;
+  api_access_verified: boolean;
   tracking: boolean;
   dispatch_hours: number | null;
   stock_sync: boolean;
@@ -31,7 +40,7 @@ export default function SuppliersPage() {
   const [rows,setRows] = useState<SupplierRow[]>([]);
   const [msg,setMsg] = useState("");
   const [form,setForm] = useState({
-    name:"", sourceUrl:"", dispatchHours:"24", deliveryDays:"", shipsDirectly:false, invoice:false, invoiceMode:"A_VALIDAR" as "A_VALIDAR"|"FORNECEDOR_EMITE"|"RL_PIN_EMITE", blindShipping:false, returnsSupported:false, tracking:false, stockSync:false, notes:""
+    name:"", sourceUrl:"", monthlyFee:"", setupFee:"", apiFee:"", perOrderFee:"", minimumBalance:"", lockinMonths:"", cancellationTerms:"", evidenceUrl:"", apiAccessVerified:false, dispatchHours:"24", deliveryDays:"", shipsDirectly:false, invoice:false, invoiceMode:"A_VALIDAR" as "A_VALIDAR"|"FORNECEDOR_EMITE"|"RL_PIN_EMITE", blindShipping:false, returnsSupported:false, tracking:false, stockSync:false, notes:""
   });
 
   async function refresh(){
@@ -71,13 +80,22 @@ export default function SuppliersPage() {
         deliveryDays:form.deliveryDays ? Number(form.deliveryDays) : undefined,
         returnsSupported:form.returnsSupported,
         sourceUrl:form.sourceUrl.trim() || undefined,
+        monthlyFee:form.monthlyFee.trim() ? Number(form.monthlyFee) : undefined,
+        setupFee:form.setupFee.trim() ? Number(form.setupFee) : undefined,
+        apiFee:form.apiFee.trim() ? Number(form.apiFee) : undefined,
+        perOrderFee:form.perOrderFee.trim() ? Number(form.perOrderFee) : undefined,
+        minimumBalance:form.minimumBalance.trim() ? Number(form.minimumBalance) : undefined,
+        lockinMonths:form.lockinMonths.trim() ? Number(form.lockinMonths) : undefined,
+        cancellationTerms:form.cancellationTerms.trim() || undefined,
+        evidenceUrl:form.evidenceUrl.trim() || undefined,
+        apiAccessVerified:form.apiAccessVerified,
         tracking:form.tracking,
         dispatchHours:Number(form.dispatchHours||"0"),
         stockSync:form.stockSync,
         testedOrders:0,
         notes:form.notes
       });
-      setForm({name:"",sourceUrl:"",dispatchHours:"24",deliveryDays:"",shipsDirectly:true,invoice:true,invoiceMode:"A_VALIDAR",blindShipping:false,returnsSupported:false,tracking:true,stockSync:false,notes:""});
+      setForm({name:"",sourceUrl:"",monthlyFee:"",setupFee:"",apiFee:"",perOrderFee:"",minimumBalance:"",lockinMonths:"",cancellationTerms:"",evidenceUrl:"",apiAccessVerified:false,dispatchHours:"24",deliveryDays:"",shipsDirectly:true,invoice:true,invoiceMode:"A_VALIDAR",blindShipping:false,returnsSupported:false,tracking:true,stockSync:false,notes:""});
       await refresh();
       setMsg("Fornecedor salvo como EM TESTE.");
     }catch(e){ setMsg(e instanceof Error ? e.message : "Falha ao salvar fornecedor."); }
@@ -96,6 +114,17 @@ export default function SuppliersPage() {
       <form className="supplierForm" onSubmit={add}>
         <input required placeholder="Nome do fornecedor" value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/>
         <input placeholder="Site / origem do fornecedor" value={form.sourceUrl} onChange={e=>setForm({...form,sourceUrl:e.target.value})}/>
+        <div className="panelTitle"><div><p className="eyebrow">CUSTOS E CONTRATO</p><h2>Valores comprovados ou deixar em branco</h2></div></div>
+        <input placeholder="Mensalidade (R$)" inputMode="decimal" value={form.monthlyFee} onChange={e=>setForm({...form,monthlyFee:e.target.value})}/>
+        <input placeholder="Adesão / instalação (R$)" inputMode="decimal" value={form.setupFee} onChange={e=>setForm({...form,setupFee:e.target.value})}/>
+        <input placeholder="Custo de API / integração (R$)" inputMode="decimal" value={form.apiFee} onChange={e=>setForm({...form,apiFee:e.target.value})}/>
+        <input placeholder="Taxa por pedido (R$)" inputMode="decimal" value={form.perOrderFee} onChange={e=>setForm({...form,perOrderFee:e.target.value})}/>
+        <input placeholder="Recarga / saldo mínimo (R$)" inputMode="decimal" value={form.minimumBalance} onChange={e=>setForm({...form,minimumBalance:e.target.value})}/>
+        <input placeholder="Fidelidade em meses" inputMode="numeric" value={form.lockinMonths} onChange={e=>setForm({...form,lockinMonths:e.target.value})}/>
+        <input placeholder="Multa e cancelamento (texto)" value={form.cancellationTerms} onChange={e=>setForm({...form,cancellationTerms:e.target.value})}/>
+        <input placeholder="Link da fonte / contrato" value={form.evidenceUrl} onChange={e=>setForm({...form,evidenceUrl:e.target.value})}/>
+        <label><input type="checkbox" checked={form.apiAccessVerified} onChange={e=>setForm({...form,apiAccessVerified:e.target.checked})}/> API confirmada com evidência</label>
+        <p className="sub">Campo vazio significa custo desconhecido, nunca custo zero. Não contratar antes de verificar todos os custos.</p>
         <input placeholder="Despacho em horas" inputMode="numeric" value={form.dispatchHours} onChange={e=>setForm({...form,dispatchHours:e.target.value})}/>
         <input placeholder="Entrega estimada em dias" inputMode="numeric" value={form.deliveryDays} onChange={e=>setForm({...form,deliveryDays:e.target.value})}/>
         <select value={form.invoiceMode} onChange={e=>setForm({...form,invoiceMode:e.target.value as any})}><option value="A_VALIDAR">NF: a validar</option><option value="FORNECEDOR_EMITE">NF: fornecedor emite</option><option value="RL_PIN_EMITE">NF: RL PIN emite</option></select>
@@ -114,12 +143,12 @@ export default function SuppliersPage() {
       <div className="panelTitle"><div><p className="eyebrow">HOMOLOGAÇÃO</p><h2>Fornecedores cadastrados</h2></div><span className="badge">{rows.length} fornecedores</span></div>
       <div className="tableWrap">
         <table>
-          <thead><tr><th>Fornecedor</th><th>Status</th><th>Despacho</th><th>Entrega</th><th>NF</th><th>Envio neutro</th><th>Rastreio</th><th>Devolução</th><th>Sync</th><th>Testes OK</th><th>Falhas</th><th>Score</th><th>Ações</th></tr></thead>
+          <thead><tr><th>Fornecedor</th><th>Status</th><th>Mensalidade</th><th>API</th><th>Fidelidade</th><th>Despacho</th><th>Entrega</th><th>NF</th><th>Envio neutro</th><th>Rastreio</th><th>Devolução</th><th>Sync</th><th>Testes OK</th><th>Falhas</th><th>Score</th><th>Ações</th></tr></thead>
           <tbody>{rows.map(s=>{
             const score=supplierScore({
               id:s.id,name:s.name,status:s.status,channels:s.channels,shipsDirectly:s.ships_directly,invoice:s.invoice,invoiceMode:s.invoice_mode,blindShipping:s.blind_shipping,returnsSupported:s.returns_supported,tracking:s.tracking,dispatchHours:s.dispatch_hours ?? undefined,stockSync:s.stock_sync,testedOrders:s.tested_orders,passedTests:s.passed_tests,failedTests:s.failed_tests,notes:s.notes ?? undefined
             });
-            return <tr key={s.id}><td>{s.name}</td><td><span className="status">{s.status}</span></td><td>{s.dispatch_hours ?? "-"}h</td><td>{s.delivery_days ?? "-"} dias</td><td>{s.invoice_mode==="FORNECEDOR_EMITE"?"Fornecedor":s.invoice_mode==="RL_PIN_EMITE"?"RL PIN":"A validar"}</td><td>{s.blind_shipping?"Sim":"Não"}</td><td>{s.tracking?"Sim":"Não"}</td><td>{s.returns_supported?"Sim":"Não"}</td><td>{s.stock_sync?"Sim":"Não"}</td><td>{s.passed_tests ?? 0}</td><td>{s.failed_tests ?? 0}</td><td>{score}</td><td className="actions"><button onClick={()=>testSupplier(s.id,true)}>Teste OK</button><button onClick={()=>testSupplier(s.id,false)}>Reprovou</button></td></tr>
+            return <tr key={s.id}><td>{s.name}</td><td><span className="status">{s.status}</span></td><td>{s.monthly_fee==null?"A apurar":Number(s.monthly_fee).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}</td><td>{s.api_access_verified?"Confirmada":"Não verificada"}</td><td>{s.lockin_months==null?"A apurar":s.lockin_months+" meses"}</td><td>{s.dispatch_hours ?? "-"}h</td><td>{s.delivery_days ?? "-"} dias</td><td>{s.invoice_mode==="FORNECEDOR_EMITE"?"Fornecedor":s.invoice_mode==="RL_PIN_EMITE"?"RL PIN":"A validar"}</td><td>{s.blind_shipping?"Sim":"Não"}</td><td>{s.tracking?"Sim":"Não"}</td><td>{s.returns_supported?"Sim":"Não"}</td><td>{s.stock_sync?"Sim":"Não"}</td><td>{s.passed_tests ?? 0}</td><td>{s.failed_tests ?? 0}</td><td>{score}</td><td className="actions"><button onClick={()=>testSupplier(s.id,true)}>Teste OK</button><button onClick={()=>testSupplier(s.id,false)}>Reprovou</button></td></tr>
           })}</tbody>
         </table>
       </div>
