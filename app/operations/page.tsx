@@ -13,6 +13,8 @@ export default function OperationsPage(){
   const [trends,setTrends]=useState<{keyword:string;url:string|null}[]>([]);
   const [trendLoading,setTrendLoading]=useState(false);
   const [trendFetched,setTrendFetched]=useState(false);
+  const [savedTrends,setSavedTrends]=useState<any[]>([]);
+  const [trendRuns,setTrendRuns]=useState<any[]>([]);
 
   useEffect(()=>{(async()=>{
     try{
@@ -21,6 +23,12 @@ export default function OperationsPage(){
       if(!data.session){window.location.href="/login";return;}
       const [r,q,mlRes]=await Promise.all([listConnectorRuns(50),listPublishQueue(),fetch("/api/integrations/mercadolivre/status",{cache:"no-store"})]);
       setRuns(r);setQueue(q);
+      const [saved,history]=await Promise.all([
+        supabase.from("marketplace_trends").select("*").eq("platform","mercado_livre").order("last_seen_at",{ascending:false}).limit(50),
+        supabase.from("marketplace_trend_runs").select("*").eq("platform","mercado_livre").order("created_at",{ascending:false}).limit(10)
+      ]);
+      if(!saved.error) setSavedTrends(saved.data??[]);
+      if(!history.error) setTrendRuns(history.data??[]);
       if(mlRes.ok) setMlStatus(await mlRes.json());
     }catch(e){setMsg(e instanceof Error?e.message:"Falha ao carregar operações.");}
   })();},[]);
@@ -73,7 +81,10 @@ export default function OperationsPage(){
     <section className="card panel">
       <div className="panelTitle"><div><p className="eyebrow">GARIMPO • MERCADO LIVRE</p><h2>Tendências reais do Brasil</h2></div><button className="primary" disabled={!mlStatus?.connected || trendLoading} onClick={loadTrends}>{trendLoading?"Consultando...":"Buscar tendências"}</button></div>
       <p className="sub">Dados da API oficial. São buscas em alta, não produtos de fornecedores nem garantia de vendas. Nenhum item será publicado automaticamente.</p>
-      {trendFetched && <span className="badge">{trends.length} tendências encontradas</span>}
+      {savedTrends.length>0 && <p className="sub"><b>{savedTrends.length} termos salvos automaticamente.</b> Última coleta: {new Date(savedTrends[0].last_seen_at).toLocaleString("pt-BR")}.</p>}
+      {trendRuns.length>0 && <p className="sub">Última rotina: {trendRuns[0].status==="SUCCESS"?"SUCESSO":"FALHA"} em {new Date(trendRuns[0].created_at).toLocaleString("pt-BR")} ({trendRuns[0].items_found} termos).</p>}
+      {trendFetched && <span className="badge">{trends.length} tendências consultadas agora</span>}
+      {!trendFetched && savedTrends.map((t,i)=><div className="platform" key={t.keyword_key}><div><strong>{i+1}. {t.keyword}</strong><small>Visto {t.observations} vez(es) na coleta • última: {new Date(t.last_seen_at).toLocaleDateString("pt-BR")}</small></div>{t.source_url?<a className="secondary linkBtn" href={t.source_url} target="_blank" rel="noopener noreferrer">Ver busca ↗</a>:null}</div>)}
       <div className="platforms">{trends.map((t,i)=><div className="platform" key={t.keyword+"-"+i}><div><strong>{i+1}. {t.keyword}</strong><small>Pesquisa em destaque no Mercado Livre</small></div>{t.url?<a className="secondary linkBtn" href={t.url} target="_blank" rel="noopener noreferrer">Ver busca ↗</a>:null}</div>)}</div>
     </section>
 
