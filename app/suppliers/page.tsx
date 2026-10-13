@@ -22,6 +22,8 @@ type SupplierRow = {
   dispatch_hours: number | null;
   stock_sync: boolean;
   tested_orders: number;
+  passed_tests: number;
+  failed_tests: number;
   notes: string | null;
 };
 
@@ -112,12 +114,12 @@ export default function SuppliersPage() {
       <div className="panelTitle"><div><p className="eyebrow">HOMOLOGAÇÃO</p><h2>Fornecedores cadastrados</h2></div><span className="badge">{rows.length} fornecedores</span></div>
       <div className="tableWrap">
         <table>
-          <thead><tr><th>Fornecedor</th><th>Status</th><th>Despacho</th><th>Entrega</th><th>NF</th><th>Envio neutro</th><th>Rastreio</th><th>Devolução</th><th>Sync</th><th>Testes</th><th>Score</th><th>Ações</th></tr></thead>
+          <thead><tr><th>Fornecedor</th><th>Status</th><th>Despacho</th><th>Entrega</th><th>NF</th><th>Envio neutro</th><th>Rastreio</th><th>Devolução</th><th>Sync</th><th>Testes OK</th><th>Falhas</th><th>Score</th><th>Ações</th></tr></thead>
           <tbody>{rows.map(s=>{
             const score=supplierScore({
-              id:s.id,name:s.name,status:s.status,channels:s.channels,shipsDirectly:s.ships_directly,invoice:s.invoice,invoiceMode:s.invoice_mode,blindShipping:s.blind_shipping,returnsSupported:s.returns_supported,tracking:s.tracking,dispatchHours:s.dispatch_hours ?? undefined,stockSync:s.stock_sync,testedOrders:s.tested_orders,notes:s.notes ?? undefined
+              id:s.id,name:s.name,status:s.status,channels:s.channels,shipsDirectly:s.ships_directly,invoice:s.invoice,invoiceMode:s.invoice_mode,blindShipping:s.blind_shipping,returnsSupported:s.returns_supported,tracking:s.tracking,dispatchHours:s.dispatch_hours ?? undefined,stockSync:s.stock_sync,testedOrders:s.tested_orders,passedTests:s.passed_tests,failedTests:s.failed_tests,notes:s.notes ?? undefined
             });
-            return <tr key={s.id}><td>{s.name}</td><td><span className="status">{s.status}</span></td><td>{s.dispatch_hours ?? "-"}h</td><td>{s.delivery_days ?? "-"} dias</td><td>{s.invoice_mode==="FORNECEDOR_EMITE"?"Fornecedor":s.invoice_mode==="RL_PIN_EMITE"?"RL PIN":"A validar"}</td><td>{s.blind_shipping?"Sim":"Não"}</td><td>{s.tracking?"Sim":"Não"}</td><td>{s.returns_supported?"Sim":"Não"}</td><td>{s.stock_sync?"Sim":"Não"}</td><td>{s.tested_orders}</td><td>{score}</td><td className="actions"><button onClick={()=>testSupplier(s.id,true)}>Teste OK</button><button onClick={()=>testSupplier(s.id,false)}>Reprovou</button></td></tr>
+            return <tr key={s.id}><td>{s.name}</td><td><span className="status">{s.status}</span></td><td>{s.dispatch_hours ?? "-"}h</td><td>{s.delivery_days ?? "-"} dias</td><td>{s.invoice_mode==="FORNECEDOR_EMITE"?"Fornecedor":s.invoice_mode==="RL_PIN_EMITE"?"RL PIN":"A validar"}</td><td>{s.blind_shipping?"Sim":"Não"}</td><td>{s.tracking?"Sim":"Não"}</td><td>{s.returns_supported?"Sim":"Não"}</td><td>{s.stock_sync?"Sim":"Não"}</td><td>{s.passed_tests ?? 0}</td><td>{s.failed_tests ?? 0}</td><td>{score}</td><td className="actions"><button onClick={()=>testSupplier(s.id,true)}>Teste OK</button><button onClick={()=>testSupplier(s.id,false)}>Reprovou</button></td></tr>
           })}</tbody>
         </table>
       </div>
