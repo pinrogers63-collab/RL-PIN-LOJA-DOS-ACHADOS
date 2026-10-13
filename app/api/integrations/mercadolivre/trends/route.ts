@@ -1,8 +1,17 @@
 import { getValidMercadoLivreToken, mercadoLivreGet } from "@/lib/mercadolivre";
+import { createClient } from "@supabase/supabase-js";
 
 type Trend = { keyword?: string; url?: string };
 
-export async function GET() {
+export async function GET(request: Request) {
+  const bearer = request.headers.get("authorization");
+  const userToken = bearer?.startsWith("Bearer ") ? bearer.slice(7) : "";
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  if (!userToken || !url || !key) return Response.json({ ok:false, error:"Sessão necessária." },{status:401});
+  const authClient = createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});
+  const {data:auth,error:authError} = await authClient.auth.getUser(userToken);
+  if (authError || !auth.user) return Response.json({ok:false,error:"Sessão inválida."},{status:401});
   try {
     const token = await getValidMercadoLivreToken();
     const data = await mercadoLivreGet<Trend[]>("/trends/MLB", token);
