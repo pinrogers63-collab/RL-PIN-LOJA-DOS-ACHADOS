@@ -36,8 +36,15 @@ type SupplierRow = {
   notes: string | null;
 };
 
+type ResearchRow = {
+  id:string;name:string;category:string;modality:string;priority:string;
+  status:string;public_price:string;invoice_notes:string;api_notes:string;
+  requirements:string;risks:string;evidence_url:string;researched_at:string;
+};
+
 export default function SuppliersPage() {
   const [rows,setRows] = useState<SupplierRow[]>([]);
+  const [research,setResearch] = useState<ResearchRow[]>([]);
   const [msg,setMsg] = useState("");
   const [form,setForm] = useState({
     name:"", sourceUrl:"", monthlyFee:"", setupFee:"", apiFee:"", perOrderFee:"", minimumBalance:"", lockinMonths:"", cancellationTerms:"", evidenceUrl:"", apiAccessVerified:false, dispatchHours:"", deliveryDays:"", shipsDirectly:false, invoice:false, invoiceMode:"A_VALIDAR" as "A_VALIDAR"|"FORNECEDOR_EMITE"|"RL_PIN_EMITE", blindShipping:false, returnsSupported:false, tracking:false, stockSync:false, notes:""
@@ -53,6 +60,9 @@ export default function SuppliersPage() {
     const {data}=await supabase.auth.getSession();
     if(!data.session){ window.location.href="/login"; return; }
     await refresh();
+    const {data:radar,error:radarError}=await supabase.from("supplier_research").select("*").order("name");
+    if(radarError) setMsg("Pesquisa de fornecedores temporariamente indisponível.");
+    else setResearch((radar??[]) as ResearchRow[]);
   })();},[]);
 
   async function testSupplier(id:string, passed:boolean){
@@ -103,7 +113,7 @@ export default function SuppliersPage() {
         testedOrders:0,
         notes:form.notes
       });
-      setForm({name:"",sourceUrl:"",monthlyFee:"",setupFee:"",apiFee:"",perOrderFee:"",minimumBalance:"",lockinMonths:"",cancellationTerms:"",evidenceUrl:"",apiAccessVerified:false,dispatchHours:"",deliveryDays:"",shipsDirectly:true,invoice:true,invoiceMode:"A_VALIDAR",blindShipping:false,returnsSupported:false,tracking:true,stockSync:false,notes:""});
+      setForm({name:"",sourceUrl:"",monthlyFee:"",setupFee:"",apiFee:"",perOrderFee:"",minimumBalance:"",lockinMonths:"",cancellationTerms:"",evidenceUrl:"",apiAccessVerified:false,dispatchHours:"",deliveryDays:"",shipsDirectly:false,invoice:false,invoiceMode:"A_VALIDAR",blindShipping:false,returnsSupported:false,tracking:false,stockSync:false,notes:""});
       await refresh();
       setMsg("Fornecedor salvo como EM TESTE.");
     }catch(e){ setMsg(e instanceof Error ? e.message : "Falha ao salvar fornecedor."); }
@@ -116,6 +126,26 @@ export default function SuppliersPage() {
     </header>
 
     {msg && <div className="notice">{msg}</div>}
+
+    <section className="card panel">
+      <div className="panelTitle"><div><p className="eyebrow">PESQUISA INDEPENDENTE</p><h2>Radar de fornecedores e intermediários</h2></div><span className="badge">{research.length} candidatos • 0 aprovados por esta pesquisa</span></div>
+      <p className="sub">Informações públicas verificadas em 13/10/2026. Não são propostas comerciais nem contratos. Nenhum fornecedor é homologado automaticamente.</p>
+      <div className="platforms">
+        {research.map(r=><div className="platform" key={r.id} style={{alignItems:"flex-start"}}>
+          <div style={{maxWidth:"100%"}}>
+            <strong>{r.name} — {r.category==="FORNECEDOR_DIRETO"?"Fornecedor direto":"Intermediário"}</strong>
+            <p><small><b>Modalidade:</b> {r.modality} · <b>Prioridade:</b> {r.priority.replaceAll("_"," ")}</small></p>
+            <p><small><b>Custos publicados:</b> {r.public_price}</small></p>
+            <p><small><b>Nota fiscal:</b> {r.invoice_notes}</small></p>
+            <p><small><b>API:</b> {r.api_notes}</small></p>
+            <p><small><b>Requisitos:</b> {r.requirements}</small></p>
+            <p><small><b>Riscos e pendências:</b> {r.risks}</small></p>
+            <a href={r.evidence_url} target="_blank" rel="noopener noreferrer">Consultar fonte oficial ↗</a>
+          </div>
+          <span className="status">{r.status.replaceAll("_"," ")}</span>
+        </div>)}
+      </div>
+    </section>
 
     <section className="card panel">
       <div className="panelTitle"><div><p className="eyebrow">NOVO FORNECEDOR</p><h2>Cadastro para teste</h2></div><span className="badge">Nunca homologar sem teste</span></div>
