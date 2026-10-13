@@ -10,6 +10,9 @@ export default function OperationsPage(){
   const [queue,setQueue]=useState<any[]>([]);
   const [msg,setMsg]=useState("");
   const [mlStatus,setMlStatus]=useState<any|null>(null);
+  const [trends,setTrends]=useState<{keyword:string;url:string|null}[]>([]);
+  const [trendLoading,setTrendLoading]=useState(false);
+  const [trendFetched,setTrendFetched]=useState(false);
 
   useEffect(()=>{(async()=>{
     try{
@@ -22,6 +25,17 @@ export default function OperationsPage(){
     }catch(e){setMsg(e instanceof Error?e.message:"Falha ao carregar operações.");}
   })();},[]);
 
+  async function loadTrends(){
+    setTrendLoading(true);setMsg("");
+    try {
+      const response=await fetch("/api/integrations/mercadolivre/trends",{cache:"no-store"});
+      const data=await response.json();
+      if(!response.ok) throw new Error(data.error??"Falha ao consultar tendências.");
+      setTrends(data.trends??[]);setTrendFetched(true);
+    }catch(e){setMsg(e instanceof Error?e.message:"Não foi possível consultar tendências.");}
+    finally{setTrendLoading(false);}
+  }
+
   return <main className="shell">
     <header className="topbar">
       <div><p className="eyebrow">RL PIN • OPERAÇÕES</p><h1>Execuções & <span>Publicação</span></h1><p className="sub">Monitoramento das coletas, atualizações e fila de publicação.</p></div>
@@ -31,10 +45,10 @@ export default function OperationsPage(){
 
     <section className="grid2">
       <article className="card panel">
-        <div className="panelTitle"><div><p className="eyebrow">JANELAS</p><h2>Agenda operacional</h2></div><span className="badge">BRT</span></div>
+        <div className="panelTitle"><div><p className="eyebrow">JANELAS</p><h2>Agenda operacional</h2></div><span className="badge">Horário de Brasília</span></div>
         <div className="platforms">
-          <div className="platform"><div><strong>09:00</strong><small>Coleta principal</small></div><span className="status">PREPARADO</span></div>
-          <div className="platform"><div><strong>15:00</strong><small>Preço, estoque e tendência</small></div><span className="status">PREPARADO</span></div>
+          <div className="platform"><div><strong>09:00</strong><small>Coleta principal (integração em desenvolvimento)</small></div><span className="status">AGENDADO</span></div>
+          <div className="platform"><div><strong>15:00</strong><small>Preço, estoque e tendência (integração em desenvolvimento)</small></div><span className="status">AGENDADO</span></div>
         </div>
       </article>
 
@@ -50,8 +64,15 @@ export default function OperationsPage(){
       <div className="platforms">
         <div className="platform"><div><strong>OAuth</strong><small>{mlStatus?.connected?"Conta autorizada e token persistido":"Autorização OAuth necessária"}</small></div>{mlStatus?.connected?<span className="status">CONECTADO</span>:<a className="primary linkBtn" href="/api/integrations/mercadolivre/start">Conectar Mercado Livre</a>}</div>
         <div className="platform"><div><strong>Callback</strong><small>Endpoint OAuth seguro</small></div><span className="status">PRONTO</span></div>
-        <div className="platform"><div><strong>Webhook</strong><small>Notificações configuradas</small></div><span className="status">PRONTO</span></div>
+        <div className="platform"><div><strong>Webhook</strong><small>Endpoint disponível; recebimento real ainda não validado</small></div><span className="status">AGUARDA TESTE</span></div>
       </div>
+    </section>
+
+    <section className="card panel">
+      <div className="panelTitle"><div><p className="eyebrow">GARIMPO • MERCADO LIVRE</p><h2>Tendências reais do Brasil</h2></div><button className="primary" disabled={!mlStatus?.connected || trendLoading} onClick={loadTrends}>{trendLoading?"Consultando...":"Buscar tendências"}</button></div>
+      <p className="sub">Dados da API oficial. São buscas em alta, não produtos de fornecedores nem garantia de vendas. Nenhum item será publicado automaticamente.</p>
+      {trendFetched && <span className="badge">{trends.length} tendências encontradas</span>}
+      <div className="platforms">{trends.map((t,i)=><div className="platform" key={t.keyword+"-"+i}><div><strong>{i+1}. {t.keyword}</strong><small>Pesquisa em destaque no Mercado Livre</small></div>{t.url?<a className="secondary linkBtn" href={t.url} target="_blank" rel="noopener noreferrer">Ver busca ↗</a>:null}</div>)}</div>
     </section>
 
     <section className="card panel">
