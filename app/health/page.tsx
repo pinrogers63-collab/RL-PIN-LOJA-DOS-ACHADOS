@@ -52,7 +52,7 @@ export default function HealthPage(){
     {msg&&<div className="notice">{msg}</div>}
 
     <section className="metrics">
-      <article className="card metric"><small>Banco</small><strong>{health.database}</strong><span>Supabase</span></article>
+      <article className="card metric"><small>Banco</small><strong>{health.database}</strong><span>Infraestrutura</span></article>
       <article className="card metric"><small>Produtos</small><strong>{health.products}</strong><span>registros</span></article>
       <article className="card metric"><small>Fila pronta</small><strong>{health.publishReady}</strong><span>publicação</span></article>
       <article className="card metric"><small>Bloqueados</small><strong>{health.publishBlocked}</strong><span>Guardião</span></article>
@@ -66,7 +66,7 @@ export default function HealthPage(){
       <div className="platforms">
         {readiness?.checks?.map((c:any)=><div className="platform" key={c.id}>
           <div><strong>{c.label}</strong><small>{c.note}</small></div>
-          <span className="status">{c.ready ? "PRONTO" : c.required ? "FALTA VOCÊ" : "OPCIONAL"}</span>
+          <span className="status">{c.ready ? "PRONTO" : c.required ? "INTEGRAÇÃO PENDENTE" : "OPCIONAL"}</span>
         </div>)}
       </div>
     </section>
