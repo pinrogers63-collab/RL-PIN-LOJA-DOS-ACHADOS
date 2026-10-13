@@ -14,6 +14,8 @@ export type Supplier = {
   dispatchHours?: number;
   stockSync: boolean;
   testedOrders: number;
+  passedTests?: number;
+  failedTests?: number;
   notes?: string;
 };
 
@@ -27,10 +29,10 @@ export function supplierScore(s: Supplier) {
   if ((s.dispatchHours ?? 999) <= 24) score += 15;
   else if ((s.dispatchHours ?? 999) <= 48) score += 8;
   if (s.returnsSupported) score += 5;
-  if (s.testedOrders >= 3) score += 5;
+  if ((s.passedTests ?? 0) >= 3 && (s.failedTests ?? 0) === 0) score += 5;
   return Math.min(100, score);
 }
 
 export function canHomologate(s: Supplier) {
-  return supplierScore(s) >= 80 && s.testedOrders >= 3 && s.status !== "BLOQUEADO" && s.invoice && s.invoiceMode !== undefined && s.invoiceMode !== "A_VALIDAR" && s.shipsDirectly && s.tracking;
+  return supplierScore(s) >= 80 && (s.passedTests ?? 0) >= 3 && (s.failedTests ?? 0) === 0 && s.status !== "BLOQUEADO" && s.invoice && s.invoiceMode !== undefined && s.invoiceMode !== "A_VALIDAR" && s.shipsDirectly && s.tracking;
 }
