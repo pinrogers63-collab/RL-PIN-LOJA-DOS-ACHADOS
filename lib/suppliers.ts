@@ -10,6 +10,15 @@ export type Supplier = {
   deliveryDays?: number;
   returnsSupported?: boolean;
   sourceUrl?: string;
+  monthlyFee?: number;
+  setupFee?: number;
+  apiFee?: number;
+  perOrderFee?: number;
+  minimumBalance?: number;
+  lockinMonths?: number;
+  cancellationTerms?: string;
+  evidenceUrl?: string;
+  apiAccessVerified?: boolean;
   tracking: boolean;
   dispatchHours?: number;
   stockSync: boolean;
