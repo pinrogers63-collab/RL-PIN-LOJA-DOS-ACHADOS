@@ -40,7 +40,7 @@ export default function SuppliersPage() {
   const [rows,setRows] = useState<SupplierRow[]>([]);
   const [msg,setMsg] = useState("");
   const [form,setForm] = useState({
-    name:"", sourceUrl:"", monthlyFee:"", setupFee:"", apiFee:"", perOrderFee:"", minimumBalance:"", lockinMonths:"", cancellationTerms:"", evidenceUrl:"", apiAccessVerified:false, dispatchHours:"24", deliveryDays:"", shipsDirectly:false, invoice:false, invoiceMode:"A_VALIDAR" as "A_VALIDAR"|"FORNECEDOR_EMITE"|"RL_PIN_EMITE", blindShipping:false, returnsSupported:false, tracking:false, stockSync:false, notes:""
+    name:"", sourceUrl:"", monthlyFee:"", setupFee:"", apiFee:"", perOrderFee:"", minimumBalance:"", lockinMonths:"", cancellationTerms:"", evidenceUrl:"", apiAccessVerified:false, dispatchHours:"", deliveryDays:"", shipsDirectly:false, invoice:false, invoiceMode:"A_VALIDAR" as "A_VALIDAR"|"FORNECEDOR_EMITE"|"RL_PIN_EMITE", blindShipping:false, returnsSupported:false, tracking:false, stockSync:false, notes:""
   });
 
   async function refresh(){
@@ -66,6 +66,14 @@ export default function SuppliersPage() {
     }catch(e){setMsg(e instanceof Error ? e.message : "Falha ao registrar teste.");}
   }
 
+  function money(value:string){
+    if(!value.trim()) return undefined;
+    const normalized=value.trim().replace(",",".");
+    const parsed=Number(normalized);
+    if(!Number.isFinite(parsed) || parsed<0) throw new Error("Custo inválido. Use valores como 189,90.");
+    return parsed;
+  }
+
   async function add(e:React.FormEvent){
     e.preventDefault(); setMsg("");
     try{
@@ -80,22 +88,22 @@ export default function SuppliersPage() {
         deliveryDays:form.deliveryDays ? Number(form.deliveryDays) : undefined,
         returnsSupported:form.returnsSupported,
         sourceUrl:form.sourceUrl.trim() || undefined,
-        monthlyFee:form.monthlyFee.trim() ? Number(form.monthlyFee) : undefined,
-        setupFee:form.setupFee.trim() ? Number(form.setupFee) : undefined,
-        apiFee:form.apiFee.trim() ? Number(form.apiFee) : undefined,
-        perOrderFee:form.perOrderFee.trim() ? Number(form.perOrderFee) : undefined,
-        minimumBalance:form.minimumBalance.trim() ? Number(form.minimumBalance) : undefined,
+        monthlyFee:money(form.monthlyFee),
+        setupFee:money(form.setupFee),
+        apiFee:money(form.apiFee),
+        perOrderFee:money(form.perOrderFee),
+        minimumBalance:money(form.minimumBalance),
         lockinMonths:form.lockinMonths.trim() ? Number(form.lockinMonths) : undefined,
         cancellationTerms:form.cancellationTerms.trim() || undefined,
         evidenceUrl:form.evidenceUrl.trim() || undefined,
         apiAccessVerified:form.apiAccessVerified,
         tracking:form.tracking,
-        dispatchHours:Number(form.dispatchHours||"0"),
+        dispatchHours:form.dispatchHours.trim() ? Number(form.dispatchHours) : undefined,
         stockSync:form.stockSync,
         testedOrders:0,
         notes:form.notes
       });
-      setForm({name:"",sourceUrl:"",monthlyFee:"",setupFee:"",apiFee:"",perOrderFee:"",minimumBalance:"",lockinMonths:"",cancellationTerms:"",evidenceUrl:"",apiAccessVerified:false,dispatchHours:"24",deliveryDays:"",shipsDirectly:true,invoice:true,invoiceMode:"A_VALIDAR",blindShipping:false,returnsSupported:false,tracking:true,stockSync:false,notes:""});
+      setForm({name:"",sourceUrl:"",monthlyFee:"",setupFee:"",apiFee:"",perOrderFee:"",minimumBalance:"",lockinMonths:"",cancellationTerms:"",evidenceUrl:"",apiAccessVerified:false,dispatchHours:"",deliveryDays:"",shipsDirectly:true,invoice:true,invoiceMode:"A_VALIDAR",blindShipping:false,returnsSupported:false,tracking:true,stockSync:false,notes:""});
       await refresh();
       setMsg("Fornecedor salvo como EM TESTE.");
     }catch(e){ setMsg(e instanceof Error ? e.message : "Falha ao salvar fornecedor."); }
