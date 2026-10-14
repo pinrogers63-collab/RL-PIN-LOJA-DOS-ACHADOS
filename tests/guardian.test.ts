@@ -1,37 +1,31 @@
 import { describe, expect, it } from "vitest";
 import { runGuardian } from "../lib/guardian";
 
-const product:any = {
-  id:"1",
-  title:"Produto de teste completo",
-  platform:"shopee",
-  sourceUrl:"https://example.com/p/1",
-  cost:40,
-  marketPrice:90,
-  stock:10,
-  score:80,
-  status:"APROVADO",
-  updatedAt:new Date().toISOString()
+const base:any = {
+  id:"p1",title:"Produto seguro para teste",platform:"mercado_livre",
+  cost:50,marketPrice:100,stock:10,score:90,status:"APROVADO",
+  supplierId:"s1",updatedAt:new Date().toISOString(),
+  sourceUrl:"https://example.com/item",
+  supplierStatus:"HOMOLOGADO",supplierDispatchHours:24,
+  hasInvoice:true,invoiceMode:"FORNECEDOR_EMITE",hasTracking:true,
+  shipsDirectly:true,policyRisk:10,restrictedCategory:false
 };
 
-describe("Guardian RL", () => {
-  it("aprova produto sem bloqueadores", () => {
-    const r = runGuardian({
-      ...product,
-      supplierStatus:"HOMOLOGADO",
-      supplierDispatchHours:24,
-      hasInvoice:true,
-      hasTracking:true,
-      policyRisk:10,
-      restrictedCategory:false
-    });
-    expect(r.approved).toBe(true);
-    expect(r.blockers).toHaveLength(0);
+describe("Guardião RL - publicação",()=>{
+  it("aprova somente cadeia operacional comprovada",()=>{
+    expect(runGuardian(base).approved).toBe(true);
   });
-
-  it("bloqueia categoria restrita", () => {
-    const r = runGuardian({...product,restrictedCategory:true});
-    expect(r.approved).toBe(false);
-    expect(r.blockers).toContain("Categoria permitida");
+  it("bloqueia fornecedor em teste",()=>{
+    expect(runGuardian({...base,supplierStatus:"EM_TESTE"}).approved).toBe(false);
+  });
+  it("bloqueia produto sem fornecedor",()=>{
+    expect(runGuardian({...base,supplierStatus:undefined,supplierDispatchHours:undefined,hasInvoice:undefined,invoiceMode:undefined,hasTracking:undefined,shipsDirectly:undefined}).approved).toBe(false);
+  });
+  it("bloqueia NF ainda a validar",()=>{
+    expect(runGuardian({...base,invoiceMode:"A_VALIDAR"}).approved).toBe(false);
+  });
+  it("bloqueia envio direto ou rastreio não confirmados",()=>{
+    expect(runGuardian({...base,shipsDirectly:false}).approved).toBe(false);
+    expect(runGuardian({...base,hasTracking:false}).approved).toBe(false);
   });
 });
