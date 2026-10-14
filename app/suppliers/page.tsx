@@ -128,6 +128,12 @@ export default function SuppliersPage() {
     {msg && <div className="notice">{msg}</div>}
 
     <section className="card panel">
+      <div className="panelTitle"><div><p className="eyebrow">TRAVA FISCAL</p><h2>Antes da primeira venda</h2></div><span className="status">PENDENTE DE VALIDAÇÃO</span></div>
+      <p className="sub">Mercado Livre exige documentação fiscal adequada ao tipo de vendedor e logística. Para NF-e, conferir valor da venda, estado de coleta, emissão e XML. Envio direto por fornecedor em outra cidade/estado requer análise fiscal específica. Não publicar sem validação contábil e logística.</p>
+      <a href="https://vendedores.mercadolivre.com.br/nota/como-informar-as-notas-fiscais-no-mercado-livre" target="_blank" rel="noopener noreferrer">Regras oficiais do Mercado Livre sobre NF-e ↗</a>
+    </section>
+
+    <section className="card panel">
       <div className="panelTitle"><div><p className="eyebrow">PESQUISA INDEPENDENTE</p><h2>Radar de fornecedores e intermediários</h2></div><span className="badge">{research.length} candidatos • 0 aprovados por esta pesquisa</span></div>
       <p className="sub">Informações públicas verificadas em 13/10/2026. Não são propostas comerciais nem contratos. Nenhum fornecedor é homologado automaticamente.</p>
       <div className="platforms">
