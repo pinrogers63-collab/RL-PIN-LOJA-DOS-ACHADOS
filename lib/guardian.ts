@@ -7,6 +7,8 @@ export type GuardianInput = Product & {
   supplierDispatchHours?: number;
   hasInvoice?: boolean;
   hasTracking?: boolean;
+  shipsDirectly?: boolean;
+  invoiceMode?: "A_VALIDAR" | "FORNECEDOR_EMITE" | "RL_PIN_EMITE";
   policyRisk?: number;
   restrictedCategory?: boolean;
 };
@@ -66,30 +68,37 @@ export function runGuardian(product: GuardianInput): GuardianResult {
     {
       key: "supplier",
       label: "Fornecedor apto",
-      ok: product.supplierStatus !== "BLOQUEADO",
+      ok: product.supplierStatus === "HOMOLOGADO",
       blocking: true,
-      detail: product.supplierStatus === "BLOQUEADO" ? "Fornecedor bloqueado." : product.supplierStatus === "HOMOLOGADO" ? "Fornecedor homologado." : "Fornecedor ainda em teste."
+      detail: product.supplierStatus === "HOMOLOGADO" ? "Fornecedor homologado." : product.supplierStatus === "BLOQUEADO" ? "Fornecedor bloqueado." : "Fornecedor não homologado."
     },
     {
       key: "dispatch",
       label: "Prazo de despacho",
-      ok: product.supplierDispatchHours == null || product.supplierDispatchHours <= 48,
-      blocking: false,
-      detail: product.supplierDispatchHours == null ? "Prazo ainda não informado." : product.supplierDispatchHours <= 48 ? "Prazo dentro da faixa operacional inicial." : "Prazo de despacho alto."
+      ok: product.supplierDispatchHours != null && product.supplierDispatchHours > 0 && product.supplierDispatchHours <= 48,
+      blocking: true,
+      detail: product.supplierDispatchHours == null ? "Prazo não comprovado." : product.supplierDispatchHours <= 48 ? "Prazo dentro da faixa operacional." : "Prazo de despacho acima de 48h."
     },
     {
       key: "tracking",
       label: "Rastreio",
-      ok: product.hasTracking !== false,
-      blocking: false,
-      detail: product.hasTracking === false ? "Fornecedor sem rastreio confirmado." : "Rastreio disponível ou pendente de validação."
+      ok: product.hasTracking === true,
+      blocking: true,
+      detail: product.hasTracking === true ? "Rastreio confirmado." : "Rastreio não confirmado."
     },
     {
       key: "invoice",
       label: "Nota fiscal",
-      ok: product.hasInvoice !== false,
-      blocking: false,
-      detail: product.hasInvoice === false ? "Nota fiscal não confirmada." : "Nota fiscal disponível ou pendente de validação."
+      ok: product.hasInvoice === true && product.invoiceMode != null && product.invoiceMode !== "A_VALIDAR",
+      blocking: true,
+      detail: product.hasInvoice === true && product.invoiceMode && product.invoiceMode !== "A_VALIDAR" ? "Fluxo de nota fiscal confirmado." : "Nota fiscal/fluxo fiscal não comprovado."
+    },
+    {
+      key: "direct_shipping",
+      label: "Envio direto ao cliente",
+      ok: product.shipsDirectly === true,
+      blocking: true,
+      detail: product.shipsDirectly === true ? "Envio direto confirmado." : "Envio direto não confirmado."
     },
     {
       key: "policy",
