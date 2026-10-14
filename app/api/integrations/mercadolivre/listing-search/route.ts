@@ -16,6 +16,14 @@ export async function GET(request:Request){
 
   const keyword=new URL(request.url).searchParams.get("q")?.trim()??"";
   if(keyword.length<3 || keyword.length>100) return Response.json({ok:false,error:"Digite de 3 a 100 caracteres."},{status:400});
+  function safeListingUrl(value:unknown){
+    if(typeof value!=="string") return null;
+    try{
+      const u=new URL(value);
+      if(u.protocol!=="https:" || !(u.hostname==="mercadolivre.com.br" || u.hostname.endsWith(".mercadolivre.com.br"))) return null;
+      return u.toString();
+    }catch{return null;}
+  }
   try{
     const token=await getValidMercadoLivreToken();
     const data=await mercadoLivreGet<SearchResponse>(`/sites/MLB/search?q=${encodeURIComponent(keyword)}&limit=5`,token);
@@ -23,7 +31,7 @@ export async function GET(request:Request){
       id:String(x.id).slice(0,40),title:String(x.title).slice(0,250),
       price:typeof x.price==="number"?x.price:null,
       currency:x.currency_id??"BRL",
-      url:typeof x.permalink==="string" && /^https:\/\/(www\.)?mercadolivre\.com\.br\//i.test(x.permalink)?x.permalink:null,
+      url:safeListingUrl(x.permalink),
       stock:typeof x.available_quantity==="number"?x.available_quantity:null,
       category:x.category_id??null,condition:x.condition??null
     }));
