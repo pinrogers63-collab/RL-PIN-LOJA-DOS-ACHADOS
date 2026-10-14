@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { createProduct, listProducts, updateProductStatus } from "@/lib/product-repository";
 import { getProductHistory } from "@/lib/history-repository";
-import { validateAndEnqueue } from "@/lib/publish-service";
 
 type Status = "NOVO" | "EM_ALTA" | "OBSERVAR" | "APROVADO" | "SALAO" | "PUBLICADO" | "DESCARTADO";
 type PlatformId = "shopee" | "mercado_livre" | "tiktok" | "pinterest" | "amazon" | "outros";
@@ -162,9 +161,17 @@ export default function Dashboard() {
   async function preparePublish(id: string) {
     setMessage("");
     try {
-      const data = await validateAndEnqueue(id);
+      const {data:sessionData}=await getSupabaseBrowser().auth.getSession();
+      if(!sessionData.session) throw new Error("Sessão expirada. Entre novamente.");
+      const response=await fetch("/api/publish/prepare",{
+        method:"POST",
+        headers:{"content-type":"application/json",Authorization:`Bearer ${sessionData.session.access_token}`},
+        body:JSON.stringify({productId:id})
+      });
+      const data=await response.json();
+      if(!response.ok) throw new Error(data.error??"Falha ao preparar publicação.");
       setMessage(data.guard.approved
-        ? "Produto aprovado pelo Guardião e enviado para a fila segura de publicação."
+        ? "Produto aprovado na análise e colocado na fila interna. Nenhum anúncio foi publicado."
         : `Publicação bloqueada pelo Guardião: ${data.guard.blockers.join(", ")}`);
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Falha ao preparar publicação.");
