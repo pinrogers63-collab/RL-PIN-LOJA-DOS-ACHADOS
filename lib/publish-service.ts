@@ -10,7 +10,7 @@ export async function validateAndEnqueue(productId: string) {
 
   const { data: row, error } = await supabase
     .from("products")
-    .select("*, suppliers(status, dispatch_hours, invoice, tracking)")
+    .select("*, suppliers(status, dispatch_hours, invoice, invoice_mode, tracking, ships_directly)")
     .eq("id", productId)
     .single();
 
@@ -39,6 +39,8 @@ export async function validateAndEnqueue(productId: string) {
     supplierDispatchHours: row.suppliers?.dispatch_hours ?? undefined,
     hasInvoice: row.suppliers?.invoice ?? undefined,
     hasTracking: row.suppliers?.tracking ?? undefined,
+    shipsDirectly: row.suppliers?.ships_directly ?? undefined,
+    invoiceMode: row.suppliers?.invoice_mode ?? undefined,
     restrictedCategory: Boolean(row.metadata?.restrictedCategory),
     policyRisk: Number(row.metadata?.policyRisk ?? 0)
   });
