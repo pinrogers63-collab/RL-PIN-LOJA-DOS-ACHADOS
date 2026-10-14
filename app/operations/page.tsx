@@ -15,6 +15,10 @@ export default function OperationsPage(){
   const [trendFetched,setTrendFetched]=useState(false);
   const [savedTrends,setSavedTrends]=useState<any[]>([]);
   const [trendRuns,setTrendRuns]=useState<any[]>([]);
+  const [listingQuery,setListingQuery]=useState("");
+  const [listingResults,setListingResults]=useState<any[]>([]);
+  const [listingLoading,setListingLoading]=useState(false);
+  const [listingChecked,setListingChecked]=useState(false);
 
   useEffect(()=>{(async()=>{
     try{
@@ -44,6 +48,21 @@ export default function OperationsPage(){
       setTrends(data.trends??[]);setTrendFetched(true);
     }catch(e){setMsg(e instanceof Error?e.message:"Não foi possível consultar tendências.");}
     finally{setTrendLoading(false);}
+  }
+
+  async function searchListings(keyword:string){
+    setListingQuery(keyword);setListingResults([]);setListingLoading(true);setListingChecked(false);setMsg("");
+    try{
+      const {data}=await getSupabaseBrowser().auth.getSession();
+      if(!data.session) throw new Error("Entre novamente na sua conta.");
+      const response=await fetch("/api/integrations/mercadolivre/listing-search?q="+encodeURIComponent(keyword),{
+        cache:"no-store",headers:{Authorization:`Bearer ${data.session.access_token}`}
+      });
+      const result=await response.json();
+      if(!response.ok) throw new Error(result.error??"Pesquisa indisponível.");
+      setListingResults(result.results??[]);setListingChecked(true);
+    }catch(e){setMsg(e instanceof Error?e.message:"Não foi possível pesquisar anúncios.");}
+    finally{setListingLoading(false);}
   }
 
   return <main className="shell">
@@ -84,9 +103,16 @@ export default function OperationsPage(){
       {savedTrends.length>0 && <p className="sub"><b>{savedTrends.length} termos salvos automaticamente.</b> Última coleta: {new Date(savedTrends[0].last_seen_at).toLocaleString("pt-BR")}.</p>}
       {trendRuns.length>0 && <p className="sub">Última rotina: {trendRuns[0].status==="SUCCESS"?"SUCESSO":"FALHA"} em {new Date(trendRuns[0].created_at).toLocaleString("pt-BR")} ({trendRuns[0].items_found} termos).</p>}
       {trendFetched && <span className="badge">{trends.length} tendências consultadas agora</span>}
-      {!trendFetched && savedTrends.map((t,i)=><div className="platform" key={t.keyword_key}><div><strong>{i+1}. {t.keyword}</strong><small>Visto {t.observations} vez(es) na coleta • última: {new Date(t.last_seen_at).toLocaleDateString("pt-BR")}</small></div>{t.source_url?<a className="secondary linkBtn" href={t.source_url} target="_blank" rel="noopener noreferrer">Ver busca ↗</a>:null}</div>)}
+      {!trendFetched && savedTrends.map((t,i)=><div className="platform" key={t.keyword_key}><div><strong>{i+1}. {t.keyword}</strong><small>Visto {t.observations} vez(es) na coleta • última: {new Date(t.last_seen_at).toLocaleDateString("pt-BR")}</small></div><div className="actions"><button disabled={listingLoading} onClick={()=>searchListings(t.keyword)}>Ver anúncios</button>{t.source_url?<a className="secondary linkBtn" href={t.source_url} target="_blank" rel="noopener noreferrer">Abrir busca ↗</a>:null}</div></div>)}
       <div className="platforms">{trends.map((t,i)=><div className="platform" key={t.keyword+"-"+i}><div><strong>{i+1}. {t.keyword}</strong><small>Pesquisa em destaque no Mercado Livre</small></div>{t.url?<a className="secondary linkBtn" href={t.url} target="_blank" rel="noopener noreferrer">Ver busca ↗</a>:null}</div>)}</div>
     </section>
+
+    {(listingLoading || listingChecked) && <section className="card panel">
+      <div className="panelTitle"><div><p className="eyebrow">PESQUISA DE PRODUTOS</p><h2>{listingQuery}</h2></div><span className="badge">{listingLoading?"Consultando...":listingResults.length+" anúncios"}</span></div>
+      <p className="sub">Resultados da API oficial do Mercado Livre. Preço anunciado não é custo de fornecedor. Antes de vender: localizar fornecedor autorizado, NF, estoque e margem real.</p>
+      <div className="platforms">{listingResults.map(p=><div className="platform" key={p.id}><div><strong>{p.title}</strong><small>{p.id} • {p.price==null?"Preço indisponível":Number(p.price).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})} • estoque anunciado: {p.stock??"não informado"}</small></div>{p.url?<a className="secondary linkBtn" href={p.url} target="_blank" rel="noopener noreferrer">Ver anúncio ↗</a>:null}</div>)}</div>
+      {!listingLoading && listingResults.length===0 && <p className="empty">Nenhum anúncio retornado pela API para este termo.</p>}
+    </section>}
 
     <section className="card panel">
       <div className="panelTitle"><div><p className="eyebrow">EXECUÇÕES</p><h2>Últimos jobs</h2></div><span className="badge">{runs.length} registros</span></div>
