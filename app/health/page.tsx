@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { getSystemHealth } from "@/lib/system-health-repository";
@@ -47,7 +48,7 @@ export default function HealthPage(){
   return <main className="shell">
     <header className="topbar">
       <div><p className="eyebrow">RL PIN • SAÚDE DO SISTEMA</p><h1>Operação <span>Monitorada</span></h1><p className="sub">Banco, filas, Salão, conectores e snapshots diários.</p></div>
-      <a className="secondary linkBtn backBtn" href="/">← Voltar ao painel</a>
+      <Link className="secondary linkBtn backBtn" href="/">← Voltar ao painel</Link>
     </header>
     {msg&&<div className="notice">{msg}</div>}
 

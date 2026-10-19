@@ -4,11 +4,10 @@
 Fonte -> Normalização -> Deduplicação -> Guardião RL -> Score -> Margem -> Aprovação -> Salão -> Publicação -> Monitoramento
 
 ## Coletas
-- 06:00 BRT: coleta principal
-- 10:00 BRT: preço, estoque e tendência
-- 15:00 BRT: preço, estoque e tendência
+- 09:00 BRT: coleta principal (garimpo via API pública + tendências oficiais se autorizado)
+- 15:00 BRT: atualização de preço, estoque e tendência
 
-Os horários estão declarados no Vercel em UTC (09:00, 13:00 e 18:00).
+Os horários estão declarados no Vercel em UTC (12:00 e 18:00), equivalentes a 09:00 e 15:00 BRT.
 
 ## Segurança
 - Nenhuma integração externa é considerada conectada sem credencial válida.

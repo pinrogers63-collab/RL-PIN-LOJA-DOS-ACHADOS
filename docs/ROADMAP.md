@@ -17,9 +17,9 @@
 - [ ] TikTok Shop
 - [ ] Deduplicação
 - [ ] Histórico de preço/estoque
-- [ ] Coleta 06:00
-- [ ] Atualização 10:00
-- [ ] Atualização 15:00
+- [x] Coleta 09:00 (API pública do Mercado Livre, sem OAuth)
+- [x] Atualização 15:00
+- [ ] Coleta de catálogo/preço/estoque em tempo real (requer OAuth do ML)
 
 ## Fase 3 — Salão
 - [ ] 4 conceitos cinematográficos

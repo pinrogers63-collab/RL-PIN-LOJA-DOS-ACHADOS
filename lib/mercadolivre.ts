@@ -1,7 +1,9 @@
+import { getSupabaseServiceRole } from "./supabase-server";
+
 const ML_AUTH_BASE = "https://auth.mercadolivre.com.br/authorization";
 const ML_TOKEN_URL = "https://api.mercadolibre.com/oauth/token";
 const ML_API_BASE = "https://api.mercadolibre.com";
-const DEFAULT_APP_URL = "https://rl-pin-loja-dos-achados-omini1.vercel.app";
+const DEFAULT_APP_URL = "https://rl-pin-loja-dos-achados.vercel.app";
 
 type MercadoLivreToken = {
   access_token: string;
@@ -23,30 +25,42 @@ type StoredMarketplaceToken = {
   updated_at: string;
 };
 
-function getTokenStoreConfig() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const secret = process.env.CRON_SECRET;
-  if (!url || !secret) throw new Error("Token store não configurado.");
+/**
+ * Persistência de tokens via tabela marketplace_tokens (service role, server-side).
+ * Substitui as Edge Functions marketplace-token-store (inexistentes no deploy).
+ * A interface pública (persist/get/getValid) é mantida intacta.
+ */
+
+export function buildTokenRow(token: MercadoLivreToken) {
   return {
-    endpoint: `${url.endsWith("/") ? url.slice(0, -1) : url}/functions/v1/marketplace-token-store`,
-    secret
+    platform: "mercado_livre",
+    external_user_id: String(token.user_id),
+    access_token: token.access_token,
+    refresh_token: token.refresh_token ?? null,
+    token_type: token.token_type ?? "Bearer",
+    scope: token.scope ?? null,
+    expires_at: new Date(Date.now() + token.expires_in * 1000).toISOString(),
+    updated_at: new Date().toISOString()
   };
 }
 
-async function tokenStore<T>(body: Record<string, unknown>): Promise<T> {
-  const { endpoint, secret } = getTokenStoreConfig();
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-rlpin-secret": secret
-    },
-    body: JSON.stringify(body),
-    cache: "no-store"
-  });
-  const text = await response.text();
-  if (!response.ok) throw new Error(`Token store HTTP ${response.status}: ${text.slice(0, 160)}`);
-  return (text ? JSON.parse(text) : null) as T;
+export function mapStoredToken(row: Record<string, any> | null): StoredMarketplaceToken | null {
+  if (!row) return null;
+  return {
+    platform: row.platform,
+    external_user_id: row.external_user_id,
+    access_token: row.access_token,
+    refresh_token: row.refresh_token,
+    token_type: row.token_type,
+    scope: row.scope,
+    expires_at: row.expires_at,
+    updated_at: row.updated_at
+  };
+}
+
+/** Retorna true se o token expira dentro da margem (padrão 5 min). */
+export function isTokenExpiring(expiresAt: string, marginMs = 5 * 60 * 1000, nowMs = Date.now()) {
+  return new Date(expiresAt).getTime() <= nowMs + marginMs;
 }
 
 export function getMercadoLivrePublicConfig() {
@@ -113,31 +127,28 @@ export async function refreshMercadoLivreToken(refreshToken: string) {
 }
 
 export async function persistMercadoLivreToken(token: MercadoLivreToken) {
-  await tokenStore<{ ok: boolean }>({
-    action: "save",
-    platform: "mercado_livre",
-    external_user_id: String(token.user_id),
-    access_token: token.access_token,
-    refresh_token: token.refresh_token ?? null,
-    token_type: token.token_type ?? "Bearer",
-    scope: token.scope ?? null,
-    expires_in: token.expires_in
-  });
+  const supabase = getSupabaseServiceRole();
+  const { error } = await supabase
+    .from("marketplace_tokens")
+    .upsert(buildTokenRow(token), { onConflict: "platform" });
+  if (error) throw new Error(`Falha ao persistir token do Mercado Livre: ${error.message}`);
 }
 
 export async function getStoredMercadoLivreToken(): Promise<StoredMarketplaceToken | null> {
-  const result = await tokenStore<{ ok: boolean; token: StoredMarketplaceToken | null }>({
-    action: "get",
-    platform: "mercado_livre"
-  });
-  return result.token ?? null;
+  const supabase = getSupabaseServiceRole();
+  const { data, error } = await supabase
+    .from("marketplace_tokens")
+    .select("*")
+    .eq("platform", "mercado_livre")
+    .maybeSingle();
+  if (error) throw new Error(`Falha ao ler token do Mercado Livre: ${error.message}`);
+  return mapStoredToken(data);
 }
 
 export async function getValidMercadoLivreToken() {
   const stored = await getStoredMercadoLivreToken();
   if (!stored) throw new Error("Mercado Livre ainda não autorizado.");
-  const expiresSoon = new Date(stored.expires_at).getTime() <= Date.now() + 5 * 60 * 1000;
-  if (!expiresSoon) return stored.access_token;
+  if (!isTokenExpiring(stored.expires_at)) return stored.access_token;
   if (!stored.refresh_token) throw new Error("Refresh token do Mercado Livre ausente.");
   const refreshed = await refreshMercadoLivreToken(stored.refresh_token);
   await persistMercadoLivreToken(refreshed);

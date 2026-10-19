@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { createSalonJob, listSalonEligibleProducts, listSalonJobs } from "@/lib/salon-repository";
@@ -49,7 +50,7 @@ export default function SalonPage(){
   return <main className="shell">
     <header className="topbar">
       <div><p className="eyebrow">RL PIN • SALÃO DA VITÓRIA</p><h1>Criação <span>Premium</span></h1><p className="sub">Quatro conceitos, formatos por canal e figurino da Vitória.</p></div>
-      <a className="secondary linkBtn backBtn" href="/">← Voltar ao painel</a>
+      <Link className="secondary linkBtn backBtn" href="/">← Voltar ao painel</Link>
     </header>
     {msg&&<div className="notice">{msg}</div>}
 

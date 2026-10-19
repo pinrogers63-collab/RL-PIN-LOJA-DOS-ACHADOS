@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { getSettings, saveSettings } from "@/lib/settings-repository";
@@ -29,7 +30,7 @@ export default function SettingsPage(){
   return <main className="shell">
     <header className="topbar">
       <div><p className="eyebrow">RL PIN • CONFIGURAÇÕES</p><h1>Regras <span>Centrais</span></h1><p className="sub">Os limites que controlam score, margem, fornecedor e risco.</p></div>
-      <a className="secondary linkBtn backBtn" href="/">← Voltar ao painel</a>
+      <Link className="secondary linkBtn backBtn" href="/">← Voltar ao painel</Link>
     </header>
     {msg&&<div className="notice">{msg}</div>}
     <section className="card panel">

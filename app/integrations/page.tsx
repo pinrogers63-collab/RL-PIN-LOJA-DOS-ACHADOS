@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 
@@ -42,7 +43,7 @@ export default function IntegrationsPage(){
   return <main className="shell">
     <header className="topbar">
       <div><p className="eyebrow">RL PIN • INTEGRAÇÕES</p><h1>Central de <span>Plataformas</span></h1><p className="sub">Conecte marketplaces e canais sem reconstruir a esteira.</p></div>
-      <a className="secondary linkBtn backBtn" href="/">← Voltar ao painel</a>
+      <Link className="secondary linkBtn backBtn" href="/">← Voltar ao painel</Link>
     </header>
     {msg&&<div className="notice">{msg}</div>}
 

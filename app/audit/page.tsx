@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { listAuditEvents } from "@/lib/history-repository";
@@ -29,7 +30,7 @@ export default function AuditPage(){
   return <main className="shell">
     <header className="topbar">
       <div><p className="eyebrow">RL PIN • AUDITORIA</p><h1>Histórico <span>Operacional</span></h1><p className="sub">Quem mudou, o que mudou e quando mudou.</p></div>
-      <a className="secondary linkBtn backBtn" href="/">← Voltar ao painel</a>
+      <Link className="secondary linkBtn backBtn" href="/">← Voltar ao painel</Link>
     </header>
     {msg && <div className="notice">{msg}</div>}
     <section className="card panel">

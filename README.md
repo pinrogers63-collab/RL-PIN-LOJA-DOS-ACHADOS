@@ -15,9 +15,8 @@ Construir uma central premium para:
 - futuras plataformas.
 
 ## Janelas planejadas
-- 06:00: garimpo principal
-- 10:00: atualização de preço/estoque
-- 15:00: checagem final do dia
+- 09:00: garimpo principal (API pública do Mercado Livre, sem OAuth)
+- 15:00: atualização de preço/estoque e tendências
 
 Integrações externas só serão marcadas como conectadas quando houver credenciais e validação reais.
 
