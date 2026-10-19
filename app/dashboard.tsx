@@ -46,7 +46,7 @@ export default function Dashboard() {
   const [historyTitle, setHistoryTitle] = useState("");
   const [historyRows, setHistoryRows] = useState<any[]>([]);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [connectorState, setConnectorState] = useState<Record<string, boolean>>({});
+  const [connectorState, setConnectorState] = useState<Record<string, { connected: boolean; configured: boolean }>>({});
   const [form, setForm] = useState({
     title: "",
     platform: "shopee" as PlatformId,
@@ -81,7 +81,7 @@ export default function Dashboard() {
           const res = await fetch("/api/connectors", { cache: "no-store" });
           if (res.ok) {
             const data = await res.json();
-            setConnectorState(Object.fromEntries((data.connectors ?? []).map((c: any) => [c.id, Boolean(c.connected)])));
+            setConnectorState(Object.fromEntries((data.connectors ?? []).map((c: { id: string; connected?: boolean; configured?: boolean }) => [c.id, { connected: c.connected === true, configured: c.configured === true }])));
           }
         } catch {}
       } catch (err) {
@@ -267,7 +267,7 @@ export default function Dashboard() {
             ].map(([id, next]) => (
               <div className="platform" key={id}>
                 <div><strong>{platformLabel[id as PlatformId]}</strong><small>Próxima: {next}</small></div>
-                <div className="platformRight"><b>{active.filter((p) => p.platform === id).length}</b><span>{connectorState[id] ? "conectado" : "não conectado"}</span></div>
+                <div className="platformRight"><b>{active.filter((p) => p.platform === id).length}</b><span>{connectorState[id]?.connected ? "conexão verificada" : connectorState[id]?.configured ? "configurado, não validado" : "não conectado"}</span></div>
               </div>
             ))}
           </div>
