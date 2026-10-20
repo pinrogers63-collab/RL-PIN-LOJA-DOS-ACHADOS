@@ -131,5 +131,5 @@ footer{display:flex;justify-content:space-between;color:#657180;font-size:12px;p
 @media(max-width:600px){.pageNavArrows{left:12px;bottom:12px}.pageNavArrows button{width:38px;height:38px}}
 
 .brandBlock{display:flex;align-items:center;gap:14px}
-.brandLogo{width:64px;height:64px;object-fit:contain;border-radius:16px;background:#fff}
-.loginLogo{display:block;width:104px;height:104px;object-fit:contain;margin:0 auto 14px}
+.brandLogo{width:92px;height:92px;object-fit:contain;border-radius:16px;background:#fff}
+.loginLogo{display:block;width:168px;height:168px;object-fit:contain;margin:0 auto 14px}
