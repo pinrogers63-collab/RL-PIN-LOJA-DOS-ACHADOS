@@ -129,3 +129,7 @@ footer{display:flex;justify-content:space-between;color:#657180;font-size:12px;p
 .pageNavArrows button{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:#111821;color:var(--text);font-size:21px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.28)}
 .pageNavArrows button:hover{border-color:var(--accent2);color:var(--accent)}
 @media(max-width:600px){.pageNavArrows{left:12px;bottom:12px}.pageNavArrows button{width:38px;height:38px}}
+
+.brandBlock{display:flex;align-items:center;gap:14px}
+.brandLogo{width:64px;height:64px;object-fit:contain;border-radius:16px;background:#fff}
+.loginLogo{display:block;width:104px;height:104px;object-fit:contain;margin:0 auto 14px}

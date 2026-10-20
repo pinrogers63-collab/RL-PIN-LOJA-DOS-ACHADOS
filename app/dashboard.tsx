@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
 import { createProduct, listProducts, updateProductStatus } from "@/lib/product-repository";
 import { getProductHistory } from "@/lib/history-repository";
+import { LOGO_SRC } from "@/lib/logo";
 
 type Status = "NOVO" | "EM_ALTA" | "OBSERVAR" | "APROVADO" | "SALAO" | "PUBLICADO" | "DESCARTADO";
 type PlatformId = "shopee" | "mercado_livre" | "tiktok" | "pinterest" | "amazon" | "outros";
@@ -191,10 +192,13 @@ export default function Dashboard() {
   return (
     <main className="shell">
       <header className="topbar">
-        <div>
+        <div className="brandBlock">
+          <img src={LOGO_SRC} alt="RL PIN - Loja dos Achados" className="brandLogo" />
+          <div>
           <p className="eyebrow">RL PIN • CENTRAL DE OPERAÇÕES</p>
           <h1>Loja dos Achados <span>V5 Premium</span></h1>
           <p className="sub">Garimpo → Guardião → Margem → Salão → Vitória → Publicação</p>
+          </div>
         </div>
         <div className="topActions">
           <div className="sync">

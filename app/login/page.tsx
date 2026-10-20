@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { getSupabaseBrowser } from "@/lib/supabase-browser";
+import { LOGO_SRC } from "@/lib/logo";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -45,6 +46,7 @@ export default function LoginPage() {
   return (
     <main className="loginShell">
       <section className="card loginCard">
+        <img src={LOGO_SRC} alt="RL PIN - Loja dos Achados" className="loginLogo" />
         <p className="eyebrow">RL PIN • ACESSO SEGURO</p>
         <h1>Entrar na <span>V5 Premium</span></h1>
         <p className="sub">Acesso ao banco real da Loja dos Achados.</p>
