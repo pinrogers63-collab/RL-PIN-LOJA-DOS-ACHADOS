@@ -1,10 +1,13 @@
 import { createHmac } from "crypto";
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import {
+  buildGetShopInfoUrl,
   buildShopAuthUrl,
   buildShopeeTokenRow,
   getShopeeConfig,
-  signShopee
+  mapStoredShopeeToken,
+  signShopee,
+  signShopeeShopRequest
 } from "../lib/shopee";
 
 const PARTNER_ID = 1234567;
@@ -69,6 +72,80 @@ describe("buildShopAuthUrl e getShopeeConfig", () => {
     expect(url.searchParams.get("redirect")).toBe(
       "https://rl-pin-loja-dos-achados.vercel.app/api/integrations/shopee/callback"
     );
+  });
+});
+
+describe("signShopeeShopRequest e buildGetShopInfoUrl", () => {
+  const OLD_ENV = { ...process.env };
+  const ACCESS_TOKEN = "ACC-TOKEN-XYZ";
+  const SHOP_ID = 1121615229;
+
+  beforeEach(() => {
+    process.env.SHOPEE_PARTNER_ID = String(PARTNER_ID);
+    process.env.SHOPEE_PARTNER_KEY = PARTNER_KEY;
+  });
+
+  afterEach(() => {
+    process.env = { ...OLD_ENV };
+  });
+
+  function expectedShopSign(path: string, timestamp: number) {
+    return createHmac("sha256", PARTNER_KEY)
+      .update(`${PARTNER_ID}${path}${timestamp}${ACCESS_TOKEN}${SHOP_ID}`)
+      .digest("hex");
+  }
+
+  it("assina com partner_id + path + timestamp + access_token + shop_id", () => {
+    const sign = signShopeeShopRequest(
+      PARTNER_ID,
+      "/api/v2/shop/get_shop_info",
+      FIXED_TIMESTAMP,
+      ACCESS_TOKEN,
+      SHOP_ID,
+      PARTNER_KEY
+    );
+    expect(sign).toBe(expectedShopSign("/api/v2/shop/get_shop_info", FIXED_TIMESTAMP));
+    expect(sign).toMatch(/^[0-9a-f]{64}$/);
+    // A assinatura de loja difere da assinatura pública (sem token/shop).
+    expect(sign).not.toBe(expectedSign("/api/v2/shop/get_shop_info", FIXED_TIMESTAMP));
+  });
+
+  it("monta a URL de get_shop_info com todos os parâmetros exigidos", () => {
+    const url = new URL(buildGetShopInfoUrl(ACCESS_TOKEN, SHOP_ID, FIXED_TIMESTAMP));
+    expect(url.origin).toBe("https://partner.shopeemobile.com");
+    expect(url.pathname).toBe("/api/v2/shop/get_shop_info");
+    expect(url.searchParams.get("partner_id")).toBe(String(PARTNER_ID));
+    expect(url.searchParams.get("timestamp")).toBe(String(FIXED_TIMESTAMP));
+    expect(url.searchParams.get("shop_id")).toBe(String(SHOP_ID));
+    expect(url.searchParams.get("access_token")).toBe(ACCESS_TOKEN);
+    expect(url.searchParams.get("sign")).toBe(expectedShopSign("/api/v2/shop/get_shop_info", FIXED_TIMESTAMP));
+  });
+});
+
+describe("mapStoredShopeeToken", () => {
+  it("mapeia a linha persistida para o formato interno", () => {
+    const token = mapStoredShopeeToken({
+      platform: "shopee",
+      external_user_id: "1121615229",
+      access_token: "ACC-123",
+      refresh_token: "REF-456",
+      token_type: "Bearer",
+      scope: null,
+      expires_at: new Date(Date.now() + 3600_000).toISOString(),
+      updated_at: new Date().toISOString()
+    });
+    expect(token).toEqual({
+      shopId: 1121615229,
+      accessToken: "ACC-123",
+      refreshToken: "REF-456",
+      expiresAt: expect.any(String)
+    });
+  });
+
+  it("retorna null sem linha, sem access_token ou com shop inválido", () => {
+    expect(mapStoredShopeeToken(null)).toBeNull();
+    expect(mapStoredShopeeToken({ external_user_id: "1121615229" })).toBeNull();
+    expect(mapStoredShopeeToken({ external_user_id: "abc", access_token: "ACC" })).toBeNull();
   });
 });
 
