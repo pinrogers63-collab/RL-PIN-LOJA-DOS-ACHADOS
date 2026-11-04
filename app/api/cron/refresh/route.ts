@@ -1,5 +1,6 @@
 import { collectMercadoLivreTrends } from "@/lib/marketplace-trends-collector";
 import { collectShopeeShopItems } from "@/lib/shopee-collect";
+import { collectAmazonListings } from "@/lib/amazon-collect";
 import { promoteStoredListings } from "@/lib/product-promotion";
 import { getRunnableMarketplaceStatuses } from "@/lib/integration-status";
 
@@ -25,6 +26,9 @@ export async function GET(request: Request) {
     ? await collectShopeeShopItems("REFRESH")
     : {ok:false,skipped:true,error:"Shopee não autorizada."};
 
+  // Amazon: no-op limpo enquanto faltar a auto-autorização (refresh token).
+  const amazonListings = await collectAmazonListings("REFRESH");
+
   // PONTE AUTOMÁTICA: promove as listagens armazenadas (todas as
   // plataformas, inclusive de execuções anteriores) para `products`.
   const promotion = await promoteStoredListings();
@@ -34,6 +38,7 @@ export async function GET(request: Request) {
     mode: "OFFICIAL_TRENDS_COLLECTION",
     mercadoLivreTrends,
     shopeeListings,
+    amazonListings,
     promotion,
     at: new Date().toISOString(),
     tasks: connectors.map((c) => ({
