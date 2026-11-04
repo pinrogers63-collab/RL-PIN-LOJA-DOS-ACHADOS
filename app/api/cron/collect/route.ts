@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   const mlConnected = connectors.some(c => c.id === "mercado_livre" && c.connected);
   const shopeeConnected = connectors.some(c => c.id === "shopee" && c.connected);
 
-  // Coleta REAL via API pública (sem OAuth) — sempre executa.
+  // Coleta REAL de listagens via busca autenticada (OAuth) — sempre executa.
   const publicListings = await collectPublicListings("COLLECT");
 
   // Tendências oficiais — somente com OAuth concluído.

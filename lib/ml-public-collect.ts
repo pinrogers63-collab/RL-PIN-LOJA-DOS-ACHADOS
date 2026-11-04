@@ -1,6 +1,7 @@
 import { getSupabaseServiceRole } from "@/lib/supabase-server";
+import { getValidMercadoLivreToken, mercadoLivreGet } from "@/lib/mercadolivre";
 
-const ML_PUBLIC_SEARCH = "https://api.mercadolibre.com/sites/MLB/search";
+const ML_SITE_SEARCH_PATH = "/sites/MLB/search";
 const DEFAULT_KEYWORDS = "ofertas do dia,mais vendidos,eletrônicos";
 const MAX_KEYWORDS = 8;
 const RESULTS_PER_KEYWORD = 20;
@@ -63,19 +64,19 @@ export function mapPublicSearchResults(
     }));
 }
 
-async function fetchPublicSearch(keyword: string) {
-  const response = await fetch(
-    `${ML_PUBLIC_SEARCH}?q=${encodeURIComponent(keyword)}&limit=${RESULTS_PER_KEYWORD}`,
-    { headers: { accept: "application/json" }, cache: "no-store" }
+async function fetchAuthenticatedSearch(keyword: string, accessToken: string) {
+  return mercadoLivreGet<{ results?: PublicListing[] }>(
+    `${ML_SITE_SEARCH_PATH}?q=${encodeURIComponent(keyword)}&limit=${RESULTS_PER_KEYWORD}`,
+    accessToken
   );
-  if (!response.ok) throw new Error(`Busca pública respondeu HTTP ${response.status}.`);
-  return (await response.json()) as { results?: PublicListing[] };
 }
 
 /**
- * Coleta REAL mínima via API pública do Mercado Livre (sem OAuth).
- * Salva anúncios em marketplace_trends e registra a execução em
- * marketplace_trend_runs.
+ * Coleta REAL mínima de anúncios via busca do site do Mercado Livre.
+ * A busca sem token passou a responder HTTP 403, então a coleta usa o
+ * caminho OAuth já autorizado (getValidMercadoLivreToken/mercadoLivreGet,
+ * o mesmo do coletor de tendências). Salva anúncios em marketplace_trends
+ * e registra a execução em marketplace_trend_runs.
  *
  * PENDENTE (requer OAuth do ML): catálogo do vendedor, preço/estoque em
  * tempo real dos produtos cadastrados e publicação.
@@ -89,18 +90,27 @@ export async function collectPublicListings(runType: "COLLECT" | "REFRESH" = "CO
   let stored = 0;
   const errors: string[] = [];
 
-  for (const keyword of keywords) {
-    try {
-      const data = await fetchPublicSearch(keyword);
-      const rows = mapPublicSearchResults(data, keyword, runType, capturedAt);
-      fetched += rows.length;
-      if (rows.length > 0) {
-        const { error } = await supabase.from("marketplace_trends").insert(rows);
-        if (error) throw new Error(`Falha ao salvar tendências: ${error.message}`);
-        stored += rows.length;
+  let accessToken: string | null = null;
+  try {
+    accessToken = await getValidMercadoLivreToken();
+  } catch (error) {
+    errors.push(`autenticação: ${error instanceof Error ? error.message : "erro inesperado"}`);
+  }
+
+  if (accessToken) {
+    for (const keyword of keywords) {
+      try {
+        const data = await fetchAuthenticatedSearch(keyword, accessToken);
+        const rows = mapPublicSearchResults(data, keyword, runType, capturedAt);
+        fetched += rows.length;
+        if (rows.length > 0) {
+          const { error } = await supabase.from("marketplace_trends").insert(rows);
+          if (error) throw new Error(`Falha ao salvar tendências: ${error.message}`);
+          stored += rows.length;
+        }
+      } catch (error) {
+        errors.push(`${keyword}: ${error instanceof Error ? error.message : "erro inesperado"}`);
       }
-    } catch (error) {
-      errors.push(`${keyword}: ${error instanceof Error ? error.message : "erro inesperado"}`);
     }
   }
 
@@ -115,8 +125,8 @@ export async function collectPublicListings(runType: "COLLECT" | "REFRESH" = "CO
 
   return {
     ok: status === "SUCCESS",
-    source: "public_mercado_livre_search",
-    kind: "public_listings_no_oauth",
+    source: "mercado_livre_site_search",
+    kind: "authenticated_listings_oauth",
     keywords,
     fetched,
     stored,

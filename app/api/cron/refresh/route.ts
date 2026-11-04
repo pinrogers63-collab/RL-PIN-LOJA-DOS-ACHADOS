@@ -1,4 +1,5 @@
 import { collectMercadoLivreTrends } from "@/lib/marketplace-trends-collector";
+import { collectPublicListings } from "@/lib/ml-public-collect";
 import { collectShopeeShopItems } from "@/lib/shopee-collect";
 import { collectAmazonListings } from "@/lib/amazon-collect";
 import { promoteStoredListings } from "@/lib/product-promotion";
@@ -16,6 +17,11 @@ export async function GET(request: Request) {
   const connectors = await getRunnableMarketplaceStatuses();
   const mlConnected = connectors.some(c=>c.id==="mercado_livre" && c.connected);
   const shopeeConnected = connectors.some(c=>c.id==="shopee" && c.connected);
+
+  // Coleta REAL de listagens via busca autenticada (OAuth) — mesmo ritmo
+  // do cron de coleta, para a ponte de promoção ter linhas kind="listing"
+  // frescas também no refresh.
+  const publicListings = await collectPublicListings("REFRESH");
 
   const mercadoLivreTrends = mlConnected
     ? await collectMercadoLivreTrends("REFRESH")
@@ -36,6 +42,7 @@ export async function GET(request: Request) {
   return Response.json({
     ok: true,
     mode: "OFFICIAL_TRENDS_COLLECTION",
+    publicListings,
     mercadoLivreTrends,
     shopeeListings,
     amazonListings,
@@ -46,7 +53,7 @@ export async function GET(request: Request) {
       configured: c.configured,
       connected: c.connected,
       action: c.id==="mercado_livre" ? (mercadoLivreTrends.ok ? "trends_refreshed" : "trends_failed_or_skipped") : (c.connected ? "connector_pending_implementation" : "skipped_not_connected"),
-      refresh: c.id==="mercado_livre" ? ["trend"] : []
+      refresh: c.id==="mercado_livre" ? ["trend", "listing"] : []
     }))
   });
 }
