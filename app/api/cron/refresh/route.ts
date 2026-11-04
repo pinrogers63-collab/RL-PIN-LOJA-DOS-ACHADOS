@@ -1,4 +1,5 @@
 import { collectMercadoLivreTrends } from "@/lib/marketplace-trends-collector";
+import { collectShopeeShopItems } from "@/lib/shopee-collect";
 import { promoteStoredListings } from "@/lib/product-promotion";
 import { getRunnableMarketplaceStatuses } from "@/lib/integration-status";
 
@@ -13,10 +14,16 @@ export async function GET(request: Request) {
 
   const connectors = await getRunnableMarketplaceStatuses();
   const mlConnected = connectors.some(c=>c.id==="mercado_livre" && c.connected);
+  const shopeeConnected = connectors.some(c=>c.id==="shopee" && c.connected);
 
   const mercadoLivreTrends = mlConnected
     ? await collectMercadoLivreTrends("REFRESH")
     : {ok:false,skipped:true,error:"Mercado Livre não autorizado."};
+
+  // Itens da própria loja na Shopee — mesmo ritmo do cron de coleta.
+  const shopeeListings = shopeeConnected
+    ? await collectShopeeShopItems("REFRESH")
+    : {ok:false,skipped:true,error:"Shopee não autorizada."};
 
   // PONTE AUTOMÁTICA: promove as listagens armazenadas (todas as
   // plataformas, inclusive de execuções anteriores) para `products`.
@@ -26,6 +33,7 @@ export async function GET(request: Request) {
     ok: true,
     mode: "OFFICIAL_TRENDS_COLLECTION",
     mercadoLivreTrends,
+    shopeeListings,
     promotion,
     at: new Date().toISOString(),
     tasks: connectors.map((c) => ({
