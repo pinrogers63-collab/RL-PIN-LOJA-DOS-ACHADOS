@@ -1,4 +1,5 @@
 import { collectMercadoLivreTrends } from "@/lib/marketplace-trends-collector";
+import { promoteStoredListings } from "@/lib/product-promotion";
 import { getRunnableMarketplaceStatuses } from "@/lib/integration-status";
 
 function authorized(request: Request) {
@@ -12,13 +13,20 @@ export async function GET(request: Request) {
 
   const connectors = await getRunnableMarketplaceStatuses();
   const mlConnected = connectors.some(c=>c.id==="mercado_livre" && c.connected);
+
   const mercadoLivreTrends = mlConnected
     ? await collectMercadoLivreTrends("REFRESH")
     : {ok:false,skipped:true,error:"Mercado Livre não autorizado."};
+
+  // PONTE AUTOMÁTICA: promove as listagens armazenadas (todas as
+  // plataformas, inclusive de execuções anteriores) para `products`.
+  const promotion = await promoteStoredListings();
+
   return Response.json({
     ok: true,
     mode: "OFFICIAL_TRENDS_COLLECTION",
     mercadoLivreTrends,
+    promotion,
     at: new Date().toISOString(),
     tasks: connectors.map((c) => ({
       connector: c.id,
