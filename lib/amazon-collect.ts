@@ -124,6 +124,29 @@ export function mapAmazonListingsToTrendRows(
   return rows;
 }
 
+/**
+ * Sufixo diagnóstico SEGURO de uma falha na troca LWA. Expõe apenas:
+ * o CÓDIGO do erro (invalid_client = par ID/secret rejeitado;
+ * invalid_grant = refresh token rejeitado — é esse código que
+ * discrimina as duas hipóteses), o status HTTP, os últimos 4
+ * caracteres do client_id (identificador público, não é segredo) e os
+ * COMPRIMENTOS das três credenciais. Nunca inclui os valores.
+ */
+function lwaDiagnosticSuffix(
+  config: AmazonCollectConfig,
+  data: { error?: unknown } | null | undefined,
+  httpStatus: number
+): string {
+  const clientId = config.clientId ?? "";
+  const code = typeof data?.error === "string" && data.error.length > 0 ? data.error : "sem_codigo";
+  return (
+    ` [lwa_error=${code}; http=${httpStatus}` +
+    `; client_id_suffix=${clientId.slice(-4)}; client_id_len=${clientId.length}` +
+    `; secret_len=${(config.clientSecret ?? "").length}` +
+    `; refresh_token_len=${(config.refreshToken ?? "").length}]`
+  );
+}
+
 async function exchangeLwaAccessToken(config: AmazonCollectConfig): Promise<string> {
   const response = await fetch(LWA_TOKEN_URL, {
     method: "POST",
@@ -138,7 +161,8 @@ async function exchangeLwaAccessToken(config: AmazonCollectConfig): Promise<stri
   });
   const data = await response.json();
   if (!response.ok || !data?.access_token) {
-    throw new Error(data?.error_description ?? `LWA respondeu HTTP ${response.status}.`);
+    const base = data?.error_description ?? `LWA respondeu HTTP ${response.status}.`;
+    throw new Error(`${base}${lwaDiagnosticSuffix(config, data, response.status)}`);
   }
   return data.access_token as string;
 }

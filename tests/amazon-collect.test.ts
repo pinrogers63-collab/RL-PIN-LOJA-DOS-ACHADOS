@@ -147,3 +147,62 @@ describe("collectAmazonListings — guarda de auto-autorização", () => {
     expect(runInserts[0].rows).toMatchObject({ status: "SUCCESS", stored: 1 });
   });
 });
+
+describe("collectAmazonListings — diagnóstico da falha LWA", () => {
+  // Comprimentos conhecidos de propósito: o sufixo expõe só comprimentos
+  // e os 4 últimos chars do client_id (identificador) — nunca os valores.
+  const CLIENT_ID = `amzn1.application.${"a".repeat(10)}WXYZ`; // len 32, suffix WXYZ
+  const SECRET = "s".repeat(44);
+  const REFRESH = "r".repeat(100);
+
+  function setupFailingLwa(status: number, body: Record<string, unknown>) {
+    process.env.AMAZON_SP_API_CLIENT_ID = CLIENT_ID;
+    process.env.AMAZON_SP_API_CLIENT_SECRET = SECRET;
+    process.env.AMAZON_SP_API_REFRESH_TOKEN = REFRESH;
+    process.env.AMAZON_SELLER_ID = "SELLER123";
+    vi.stubGlobal("fetch", vi.fn(async (input: any) => {
+      const url = String(input);
+      if (url.includes("api.amazon.com/auth/o2/token")) {
+        return { ok: false, status, json: async () => body };
+      }
+      throw new Error(`URL inesperada: ${url}`);
+    }));
+  }
+
+  it("invalid_client: mensagem traz o sufixo completo com código, http e comprimentos", async () => {
+    setupFailingLwa(400, { error: "invalid_client", error_description: "Client authentication failed" });
+
+    const result = await collectAmazonListings("COLLECT");
+    const expected =
+      "Client authentication failed" +
+      " [lwa_error=invalid_client; http=400; client_id_suffix=WXYZ; client_id_len=32; secret_len=44; refresh_token_len=100]";
+    expect(result.ok).toBe(false);
+    expect(result.error).toBe(expected);
+    // O segredo e o token nunca aparecem na mensagem.
+    expect(result.error).not.toContain(SECRET);
+    expect(result.error).not.toContain(REFRESH);
+    const runInserts = insertCalls.filter((c) => c.table === "marketplace_trend_runs");
+    expect(runInserts[0].rows).toMatchObject({ status: "FAILED" });
+    expect(runInserts[0].rows.error).toBe(`amazon: ${expected}`);
+  });
+
+  it("sem campo error na resposta: sufixo usa sem_codigo", async () => {
+    setupFailingLwa(400, { error_description: "Client authentication failed" });
+
+    const result = await collectAmazonListings("COLLECT");
+    expect(result.error).toBe(
+      "Client authentication failed" +
+        " [lwa_error=sem_codigo; http=400; client_id_suffix=WXYZ; client_id_len=32; secret_len=44; refresh_token_len=100]"
+    );
+  });
+
+  it("sem error_description: mantém o fallback HTTP antes do sufixo", async () => {
+    setupFailingLwa(401, {});
+
+    const result = await collectAmazonListings("COLLECT");
+    expect(result.error).toBe(
+      "LWA respondeu HTTP 401." +
+        " [lwa_error=sem_codigo; http=401; client_id_suffix=WXYZ; client_id_len=32; secret_len=44; refresh_token_len=100]"
+    );
+  });
+});
